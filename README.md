@@ -1,4 +1,4 @@
-# Simple LLM Workflow
+# Doeksu
 
 A simple LLM workflow project using LangChain, LangGraph, and LangSmith.
 
