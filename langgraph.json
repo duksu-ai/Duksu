@@ -1,0 +1,8 @@
+{
+    "dependencies": ["."],
+    "graphs": {
+      "tech_news_graph": "./src/agent.py:graph"
+    },
+    "env": ".env"
+  }
+  
