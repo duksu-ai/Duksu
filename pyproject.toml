@@ -10,6 +10,7 @@ dependencies = [
     "langchain>=0.1.0",
     "langgraph>=0.0.20",
     "langsmith>=0.0.60",
+    "langchain-community",
     "openai>=1.0.0",
     "langchain-google-genai>=0.0.5",
     "python-dotenv>=1.0.0",
@@ -19,6 +20,13 @@ dependencies = [
     "langgraph-api",
     "langchain-openai",
     "pydantic>=2.0.0",
+    "aiohttp",
+    
+    "feedparser",
+    "lxml_html_clean",
+    "googlenewsdecoder",
+    "nltk",
+    "newspaper3k"
 ]
 
 [project.optional-dependencies]
