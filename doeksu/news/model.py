@@ -10,9 +10,12 @@ class NewsArticle:
     url: str
     published_at: int  # Unix timestamp
     source: str
+    is_hydrated: bool = False # Whether the article has been hydrated with full content by the parser
+    raw_html: Optional[str] = None
     thumbnail_url: Optional[str] = None
-    keywords: Optional[List[str]] = None
+    content: Optional[str] = None
     summary: Optional[str] = None
+    keywords: Optional[List[str]] = None
     author: Optional[str] = None
 
 

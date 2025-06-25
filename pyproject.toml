@@ -19,21 +19,18 @@ dependencies = [
     "langgraph-cli",
     "langgraph-api",
     "langchain-openai",
+    "langchain-anthropic",
+    "langchain-google_genai",
     "pydantic>=2.0.0",
     "aiohttp",
     
     "feedparser",
     "lxml_html_clean",
     "googlenewsdecoder",
-    "nltk",
-    "newspaper3k"
-]
+    "newspaper3k",
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "black>=23.0.0",
-    "isort>=5.0.0",
+    "psycopg[binary,pool]",
+    "boto3>=1.26.0"
 ]
 
 [tool.black]
@@ -42,3 +39,9 @@ target-version = ["py311"]
 
 [tool.isort]
 profile = "black" 
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+    "pytest-asyncio>=0.23.0",
+]

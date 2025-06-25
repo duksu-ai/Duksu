@@ -55,7 +55,7 @@ def get_google_news_rss_url(topic: str, param: GoogleNewsParam) -> str:
     return f"{base_url}/topics/{topic_id}?{urlencode(params)}"
 
 
-def parse_published_date_to_timestamp(date_str: str) -> int:
+def convert_published_date_to_timestamp(date_str: str) -> int:
     """Parse RSS published date string to unix timestamp."""
     if not date_str:
         return int(time.time())  # Current time as fallback
@@ -111,8 +111,10 @@ async def fetch_google_news_rss(url: str) -> List[NewsArticle]:
         for entry in feed.entries:
             title = str(entry.get('title', 'Untitled'))
             google_redirect_url = str(entry.get('link', ''))
-            source = str(entry.get('source'))
-            published_at = parse_published_date_to_timestamp(str(entry.get('published', '')))
+            source = getattr(entry.get('source', ''), 'title', str(entry.get('source', '')))
+
+            published_at = convert_published_date_to_timestamp(str(entry.get('published', '')))
+            
             article_url = decode_google_news_url(google_redirect_url)
             if article_url is None:
                 logger.warning(f"Skipping entry '{title}' - failed to decode Google News URL")
