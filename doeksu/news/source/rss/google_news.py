@@ -74,6 +74,23 @@ def convert_published_date_to_timestamp(date_str: str) -> int:
             return int(time.time())
 
 
+def clean_article_title(title: str) -> str:
+    """Remove news vendor name from article title (the part after the last dash)."""
+    if not title:
+        return title
+    
+    # Find the last occurrence of " - " and remove everything after it
+    # This handles cases like "Title - Vendor Name" -> "Title"
+    last_dash_index = title.rfind(" - ")
+    if last_dash_index != -1:
+        cleaned_title = title[:last_dash_index].strip()
+        # Only return the cleaned title if it's not empty
+        if cleaned_title:
+            return cleaned_title
+    
+    return title
+
+
 def decode_google_news_url(google_url: str) -> Optional[str]:
     try:
         result = gnewsdecoder(google_url, interval=1)
@@ -121,7 +138,7 @@ async def fetch_google_news_rss(url: str) -> List[NewsArticle]:
                 continue
 
             article = NewsArticle(
-                title=title,
+                title=clean_article_title(title),
                 url=article_url,
                 published_at=published_at,
                 source=source,

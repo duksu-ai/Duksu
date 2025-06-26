@@ -1,0 +1,110 @@
+[
+  {
+    "title": "At Amazon's Biggest Data Center, Everything Is Supersized for A.I. - The New York Times",
+    "url": "https://www.nytimes.com/2025/06/24/technology/amazon-ai-data-centers.html",
+    "source": "The New York Times",
+    "published_at": 1750784976,
+    "is_hydrated": true,
+    "thumbnail_url": "https://static01.nyt.com/images/2025/06/06/06visualUploader-69490-cover/06visualUploader-69490-cover-facebookJumbo.jpg",
+    "summary": "Amazon is constructing a massive artificial intelligence data center complex on 1,200 acres in New Carlisle, Indiana, as part of its 'Project Rainier.' This facility, one of the largest computers ever built, is primarily designed to support the AI startup Anthropic, in which Amazon has invested $8 billion.",
+    "author": "Karen Weise and Cade Metz",
+    "keywords": ["Amazon data center", "AI infrastructure", "Anthropic", "Project Rainier", "Indiana"],
+    "content": "Amazon is building one of the largest computers ever for work with Anthropic, an artificial intelligence start-up. The facility will consume 2.2 gigawatts of electricity and use millions of gallons of water annually for cooling."
+  },
+  {
+    "title": "OpenAI Announces GPT-5 with Revolutionary Capabilities",
+    "url": "https://techcrunch.com/2024/12/15/openai-gpt5-announcement",
+    "source": "TechCrunch",
+    "published_at": 1734220800,
+    "is_hydrated": true,
+    "thumbnail_url": "https://techcrunch.com/wp-content/uploads/2024/12/gpt5-hero.jpg",
+    "summary": "OpenAI has unveiled GPT-5, featuring significant improvements in reasoning, multimodal capabilities, and reduced hallucinations. The new model demonstrates human-level performance on complex reasoning tasks.",
+    "author": "Sarah Chen",
+    "keywords": ["OpenAI", "GPT-5", "artificial intelligence", "language model", "machine learning"],
+    "content": "OpenAI today announced GPT-5, the next generation of its flagship language model. The new model shows remarkable improvements in reasoning capabilities and can handle complex multimodal tasks with unprecedented accuracy."
+  },
+  {
+    "title": "Climate Change Impacts Agricultural Yields in Southeast Asia",
+    "url": "https://reuters.com/environment/climate-agriculture-asia-2024",
+    "source": "Reuters",
+    "published_at": 1734134400,
+    "is_hydrated": true,
+    "thumbnail_url": "https://reuters.com/resizer/agriculture-climate.jpg",
+    "summary": "Rising temperatures and changing precipitation patterns are significantly affecting rice and palm oil production across Southeast Asia, threatening food security for millions.",
+    "author": "Michael Thompson",
+    "keywords": ["climate change", "agriculture", "Southeast Asia", "food security", "rice production"],
+    "content": "Agricultural experts warn that climate change is dramatically altering farming conditions across Southeast Asia. Rice yields have declined by 15% over the past decade due to extreme weather events."
+  },
+  {
+    "title": "Tesla Unveils New Battery Technology for Grid Storage",
+    "url": "https://electrek.co/2024/12/14/tesla-battery-grid-storage",
+    "source": "Electrek",
+    "published_at": 1734048000,
+    "is_hydrated": true,
+    "thumbnail_url": "https://electrek.co/wp-content/uploads/2024/12/tesla-battery.jpg",
+    "summary": "Tesla's new 4680 battery cells promise to revolutionize grid-scale energy storage with improved energy density and reduced costs, potentially accelerating renewable energy adoption.",
+    "author": "Emma Rodriguez",
+    "keywords": ["Tesla", "battery technology", "grid storage", "renewable energy", "4680 cells"],
+    "content": "Tesla has announced breakthrough improvements to its 4680 battery cell technology, specifically designed for large-scale grid storage applications. The new cells offer 20% higher energy density."
+  },
+  {
+    "title": "NASA Discovers Water Ice on Mars Polar Regions",
+    "url": "https://nasa.gov/news/mars-water-ice-discovery-2024",
+    "source": "NASA",
+    "published_at": 1733961600,
+    "is_hydrated": true,
+    "thumbnail_url": "https://nasa.gov/images/mars-ice-discovery.jpg",
+    "summary": "NASA's latest Mars reconnaissance mission has identified substantial water ice deposits in the planet's polar regions, providing new insights into Mars' climate history and potential for future exploration.",
+    "author": "Dr. James Patterson",
+    "keywords": ["NASA", "Mars", "water ice", "space exploration", "polar regions"],
+    "content": "Scientists using data from NASA's Mars Reconnaissance Orbiter have discovered extensive water ice deposits beneath the surface of Mars' polar regions. This discovery has significant implications for future human missions."
+  },
+  {
+    "title": "Lionel Messi Leads Inter Miami to MLS Cup Victory",
+    "url": "https://espn.com/soccer/mls/story/messi-inter-miami-mls-cup-2024",
+    "source": "ESPN",
+    "published_at": 1734307200,
+    "is_hydrated": true,
+    "thumbnail_url": "https://espn.com/images/messi-mls-cup-trophy.jpg",
+    "summary": "Lionel Messi scored twice in the MLS Cup final as Inter Miami defeated Los Angeles FC 3-1 to claim their first championship title. The victory caps off a remarkable season for the Argentine superstar in Major League Soccer.",
+    "author": "Carlos Rodriguez",
+    "keywords": ["Lionel Messi", "Inter Miami", "MLS Cup", "soccer", "football", "championship"],
+    "content": "In a thrilling MLS Cup final at Mercedes-Benz Stadium, Lionel Messi delivered a masterclass performance to lead Inter Miami to their first-ever championship. The 37-year-old scored in the 23rd and 67th minutes, showcasing the brilliance that has defined his legendary career."
+  },
+  {
+    "title": "NBA Finals: Boston Celtics Defeat Denver Nuggets in Game 7 Thriller",
+    "url": "https://nba.com/news/celtics-nuggets-finals-game-7-2024",
+    "source": "NBA.com",
+    "published_at": 1734393600,
+    "is_hydrated": true,
+    "thumbnail_url": "https://nba.com/images/celtics-championship-2024.jpg",
+    "summary": "The Boston Celtics captured their 18th NBA championship with a dramatic 112-109 victory over the Denver Nuggets in Game 7. Jayson Tatum led the way with 35 points and 12 rebounds in the deciding game.",
+    "author": "Mike Johnson",
+    "keywords": ["NBA Finals", "Boston Celtics", "Denver Nuggets", "Jayson Tatum", "basketball", "championship"],
+    "content": "In one of the most exciting NBA Finals in recent memory, the Boston Celtics overcame a 15-point deficit in the fourth quarter to defeat the Denver Nuggets 112-109 in Game 7. Jayson Tatum's clutch three-pointer with 47 seconds remaining sealed the victory for Boston."
+  },
+  {
+    "title": "Marvel Studios Announces Phase 6 of MCU with Fantastic Four and X-Men",
+    "url": "https://variety.com/film/marvel-phase-6-fantastic-four-xmen-2024",
+    "source": "Variety",
+    "published_at": 1734480000,
+    "is_hydrated": true,
+    "thumbnail_url": "https://variety.com/images/marvel-phase-6-announcement.jpg",
+    "summary": "Marvel Studios unveiled its ambitious Phase 6 plans at Comic-Con, featuring the introduction of the Fantastic Four and X-Men into the Marvel Cinematic Universe. The new phase will span from 2025 to 2027 with eight major releases.",
+    "author": "Jennifer Lee",
+    "keywords": ["Marvel Studios", "MCU", "Fantastic Four", "X-Men", "Comic-Con", "superhero movies"],
+    "content": "Kevin Feige took the stage at San Diego Comic-Con to reveal Marvel Studios' Phase 6 roadmap, which will introduce beloved characters like the Fantastic Four and X-Men to the MCU. The phase kicks off with 'Fantastic Four: First Steps' in July 2025, followed by the highly anticipated X-Men reboot in 2026."
+  },
+  {
+    "title": "Taylor Swift's Eras Tour Becomes Highest-Grossing Concert Tour in History",
+    "url": "https://billboard.com/music/taylor-swift-eras-tour-record-breaking-2024",
+    "source": "Billboard",
+    "published_at": 1734566400,
+    "is_hydrated": true,
+    "thumbnail_url": "https://billboard.com/images/taylor-swift-eras-tour-record.jpg",
+    "summary": "Taylor Swift's Eras Tour has officially become the highest-grossing concert tour of all time, surpassing $2 billion in ticket sales. The tour, which spans 152 shows across five continents, has broken numerous attendance and revenue records.",
+    "author": "Sarah Williams",
+    "keywords": ["Taylor Swift", "Eras Tour", "concert tour", "music industry", "record breaking", "entertainment"],
+    "content": "With her Eras Tour, Taylor Swift has redefined what's possible in live entertainment. The tour has not only broken financial records but has also had a significant economic impact on cities worldwide, with fans traveling internationally to attend shows. The tour celebrates Swift's entire discography, featuring songs from all her studio albums."
+  }
+] 

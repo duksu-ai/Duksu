@@ -1,13 +1,27 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 from doeksu.news.model import NewsArticle
 
 
 @dataclass
+class RelevanceScore:
+    """Relevance score information for an article."""
+    score: float
+    reasoning: str
+
+
+@dataclass
+class FeedItem:
+    """A feed item containing an article with its metadata and scores."""
+    item: NewsArticle
+    scores: Dict[str, Any] = field(default_factory=dict)  # For now contains relevance score
+
+
+@dataclass
 class Feed:
-    """Curated news feed with a query prompt and a list of articles."""
+    """Curated news feed with a query prompt and a list of scored items."""
     query_prompt: str
     feed_topic: str
-    articles: List[NewsArticle] = field(default_factory=list)
+    items: List[FeedItem] = field(default_factory=list)

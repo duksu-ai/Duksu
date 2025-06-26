@@ -2,18 +2,16 @@ import asyncio
 from typing import List, Optional
 from newspaper import Article
 from langchain.schema.language_model import BaseLanguageModel
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from doeksu.news.model import NewsArticle
 from doeksu.logging_config import logger
 from pydantic import BaseModel, Field
 from doeksu.config import CONFIG
-
-
-ARTICLE_HTML_CHUNK_SIZE = 100000
-ARTICLE_CONTENT_MAX_LENGTH = 100000
+import tiktoken
 
 
 class ArticleContentExtraction(BaseModel):
-    summary: str = Field(description=f"A concise {CONFIG.ARTICLE_SUMMARY_MIN_WORD_COUNT}-{CONFIG.ARTICLE_SUMMARY_MAX_WORD_COUNT} words summary of the article")
+    summary: str = Field(description=f"A concise summary of the article between minimum {CONFIG.ARTICLE_SUMMARY_MIN_WORD_COUNT} and maximum {CONFIG.ARTICLE_SUMMARY_MAX_WORD_COUNT} words.")
     author: Optional[str] = Field(description="The author name if mentioned in the text, otherwise None")
     keywords: List[str] = Field(description=f"{CONFIG.ARTICLE_KEYWORDS_MIN_COUNT}-{CONFIG.ARTICLE_KEYWORDS_MAX_COUNT} relevant keywords/tags for the article")
 
@@ -28,6 +26,7 @@ class NewsArticleParser:
         self.llm_model = llm_model.with_structured_output(ArticleContentExtraction)
         self.compression_model = llm_model.with_structured_output(ArticleCompression)
         self.html_extraction_model = llm_model
+        self.tokenizer = tiktoken.encoding_for_model("gpt-4")
     
     async def parse_article(self, news_article: NewsArticle) -> NewsArticle:
         """
@@ -63,6 +62,8 @@ class NewsArticleParser:
             news_article.thumbnail_url = article.top_image if article.top_image else None
 
             news_article.is_hydrated = True
+
+            logger.info(f"Article parsed successfully with summary: {news_article.summary[:100]}...")
             
             return news_article
             
@@ -70,29 +71,67 @@ class NewsArticleParser:
             logger.error(f"Error parsing article {news_article.url}: {e}")
             raise e
     
+    def _count_tokens(self, text: str) -> int:
+        return len(self.tokenizer.encode(text))
+    
+    def split_html_by_tokens(self, html: str, max_tokens: int) -> List[str]:
+        """Split HTML content into chunks based on token count using LangChain's RecursiveCharacterTextSplitter."""
+        
+        # HTML-specific separators including tags and HTML-related symbols
+        html_separators = [
+            "</div>", "</section>", "</article>", "</main>", "</body>", "</html>",
+            "<div", "<section", "<article", "<main", "<body", "<html",
+            "</p>", "<p>", "</h1>", "</h2>", "</h3>", "</h4>", "</h5>", "</h6>",
+            "<h1", "<h2", "<h3", "<h4", "<h5", "<h6",
+            "</li>", "<li>", "</ul>", "<ul>", "</ol>", "<ol>",
+            "</td>", "<td", "</tr>", "<tr>", "</table>", "<table",
+            "</span>", "<span", "</a>", "<a ",
+            "\n\n", "\n", ". ", "! ", "? ", "; ", ": ", " ", ""
+        ]
+        
+        # Estimate chunk size based on average characters per token (approximately 4)
+        chunk_size = max_tokens * 4
+        chunk_overlap = min(200, chunk_size // 10)  # 10% overlap, max 200 chars
+        
+        text_splitter = RecursiveCharacterTextSplitter(
+            separators=html_separators,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            length_function=len,
+            is_separator_regex=False,
+        )
+        
+        chunks = text_splitter.split_text(html)
+    
+        return chunks
+    
     async def _extract_text_from_html(self, html: str) -> str:
         """Extract article text from HTML by processing it in chunks using LLM."""
         if not html:
             return ""
         
-        html_chunk_size = ARTICLE_HTML_CHUNK_SIZE
+        max_tokens = CONFIG.ARTICLE_PARSER_HTML_CHUNK_TOKEN_SIZE
+        html_token_count = self._count_tokens(html)
         
-        if len(html) <= html_chunk_size:
+        if html_token_count <= max_tokens:
             return await self._extract_text_from_html_chunk(html)
         
-        chunks = []
-        for i in range(0, len(html), html_chunk_size):
-            chunk = html[i:i + html_chunk_size]
-            chunks.append(chunk)
+        logger.info(f"HTML content ({html_token_count} tokens) exceeds max token limit ({max_tokens}). Processing in chunks.")
+        
+        chunks = self.split_html_by_tokens(html, max_tokens)
+        logger.info(f"Split HTML into {len(chunks)} chunks for extraction")
         
         extracted_texts = []
         for i, chunk in enumerate(chunks):
+            chunk_tokens = self._count_tokens(chunk)
+            logger.debug(f"Processing HTML chunk {i+1}/{len(chunks)} ({chunk_tokens} tokens)")
             extracted_text = await self._extract_text_from_html_chunk(chunk)
             if extracted_text.strip():
                 extracted_texts.append(extracted_text)
         
         combined_text = "\n\n".join(extracted_texts)
-        logger.info(f"HTML extraction complete: {len(html)} -> {len(combined_text)} characters")
+        combined_tokens = self._count_tokens(combined_text)
+        logger.info(f"Article text extraction from HTML complete: {html_token_count} tokens -> {combined_tokens} tokens ({len(combined_text)} chars)")
         
         return combined_text
     
@@ -131,13 +170,40 @@ HTML Content:
             return str(response)
     
     async def _extract_article_content(self, title: str, text: str, source: str) -> ArticleContentExtraction:
+        max_tokens = CONFIG.ARTICLE_PARSER_CONTENT_MAX_TOKEN_LENGTH
+        content_tokens = self._count_tokens(text)
+        
+        if content_tokens > max_tokens:
+            logger.info(f"Article content ({content_tokens} tokens) exceeds max token limit ({max_tokens}). Truncating.")
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=max_tokens * 3,
+                chunk_overlap=100,
+                length_function=len,
+                is_separator_regex=False,
+            )
+            chunks = text_splitter.split_text(text)
+            
+            truncated_text = ""
+            current_tokens = 0
+            
+            for chunk in chunks:
+                chunk_tokens = self._count_tokens(chunk)
+                if current_tokens + chunk_tokens <= max_tokens:
+                    truncated_text += chunk + "\n\n"
+                    current_tokens += chunk_tokens
+                else:
+                    break
+            
+            text = truncated_text.strip()
+            logger.info(f"Truncated content to {self._count_tokens(text)} tokens")
+        
         extraction_prompt = f"""
 Analyze the following news article and extract the requested information:
 
 News Article:
 - Title: {title}
 - Source: {source}
-- Content: {text[:ARTICLE_CONTENT_MAX_LENGTH]}
+- Content: {text}
 """
 
         response = await self.llm_model.ainvoke(extraction_prompt)

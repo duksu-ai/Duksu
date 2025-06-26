@@ -5,7 +5,7 @@ from langchain.prompts import PromptTemplate
 from pydantic import BaseModel, Field
 
 from doeksu.news.model import NewsArticle
-from doeksu.feed.model import Feed
+from doeksu.feed.model import Feed, FeedItem, RelevanceScore
 from doeksu.feed.scorer import RelevancyScorer, ArticleRelevanceScore
 from doeksu.logging_config import logger
 
@@ -98,15 +98,29 @@ class FeedCurator:
                 return Feed(
                     query_prompt=query_prompt,
                     feed_topic=feed_topic,
-                    articles=[]
+                    items=[]
                 )
             
-            selected_articles = [article for article, _ in (relevant_articles if max_articles is None else relevant_articles[:max_articles])]
+            # Create FeedItems with scores
+            selected_items = []
+            articles_to_process = relevant_articles if max_articles is None else relevant_articles[:max_articles]
+            
+            for article, relevance_score in articles_to_process:
+                feed_item = FeedItem(
+                    item=article,
+                    scores={
+                        "relevance": RelevanceScore(
+                            score=relevance_score.relevance_score,
+                            reasoning=relevance_score.reasoning
+                        )
+                    }
+                )
+                selected_items.append(feed_item)
             
             return Feed(
                 query_prompt=query_prompt,
                 feed_topic=feed_topic,
-                articles=selected_articles
+                items=selected_items
             )
             
         except Exception as e:
