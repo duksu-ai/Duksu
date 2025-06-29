@@ -5,3 +5,4 @@ __pycache__/
 *.pyo
 *.pyd
 tests/output/
+.pytest_cache/

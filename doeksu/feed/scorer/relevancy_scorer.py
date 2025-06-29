@@ -1,11 +1,11 @@
 import asyncio
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.prompts import PromptTemplate
 from pydantic import BaseModel, Field
 
 from doeksu.news.model import NewsArticle
 from doeksu.logging_config import logger
+from doeksu.agent.prompts import AIPrompt, SystemPrompt
 
 
 class ArticleRelevanceScore(BaseModel):
@@ -25,48 +25,16 @@ class RelevancyScorer:
     Uses LLM to provide intelligent relevance scoring with reasoning.
     """
     
-    def __init__(self, llm_model: BaseLanguageModel):
+    def __init__(self, llm_model: BaseLanguageModel, system_prompt: Optional[SystemPrompt] = None):
         """
         Initialize the relevancy scorer.
         
         Args:
             llm_model: Language model to use for scoring
+            system_prompt: Optional system prompt to use for scoring
         """
         self.relevance_scorer = llm_model.with_structured_output(ArticleRelevanceScore)
-        self._setup_prompts()
-    
-    def _setup_prompts(self):
-        """Setup prompt templates for relevance scoring."""
-        self.relevance_prompt = PromptTemplate(
-            input_variables=["query_prompt", "article_title", "article_summary", "article_keywords", "article_url"],
-            template="""
-            Score the relevance of this news article to the given query prompt.
-            
-            Query Prompt: {query_prompt}
-            
-            Article Details:
-            - Title: {article_title}
-            - Summary: {article_summary}
-            - Keywords: {article_keywords}
-            - URL: {article_url}
-            
-            Provide a relevance score from 0.0 to 1.0 where:
-            - 1.0 = Perfectly matches the query intent and topic
-            - 0.8-0.9 = Highly relevant with strong connection to query
-            - 0.6-0.7 = Moderately relevant with some connection
-            - 0.4-0.5 = Tangentially related
-            - 0.0-0.3 = Not relevant or off-topic
-            
-            Consider:
-            1. Direct topic match
-            2. Keyword alignment
-            3. Content depth and quality
-            4. Recency and timeliness
-            5. Source credibility
-            
-            Be precise and analytical in your scoring. Provide clear reasoning for your score.
-            """
-        )
+        self.system_prompt = system_prompt or SystemPrompt()
     
     async def score_article(
         self, 
@@ -79,16 +47,36 @@ class RelevancyScorer:
         if not article.is_hydrated:
             raise ValueError(f"Article must be hydrated before scoring: {article.url}")
         
-        chain = self.relevance_prompt | self.relevance_scorer
+        prompt = AIPrompt(self.system_prompt)
+        prompt.add_task_prompt(f"""
+Score the relevance of this news article to the given query prompt.
+
+Query Prompt: {query_prompt}
+
+Article Details:
+- Title: {article.title}
+- Summary: {article.summary}
+- Keywords: {", ".join(article.keywords or [])}
+- URL: {article.url}
+
+Provide a relevance score from 0.0 to 1.0 where:
+- 1.0 = Perfectly matches the query intent and topic
+- 0.8-0.9 = Highly relevant with strong connection to query
+- 0.6-0.7 = Moderately relevant with some connection
+- 0.4-0.5 = Tangentially related
+- 0.0-0.3 = Not relevant or off-topic
+
+Consider:
+1. Direct topic match
+2. Keyword alignment
+3. Content depth and quality
+4. Recency and timeliness
+5. Source credibility
+
+Be precise and analytical in your scoring. Provide clear reasoning for your score.
+""")
         
-        result = await chain.ainvoke({
-            "query_prompt": query_prompt,
-            "article_title": article.title,
-            "article_content": article.content,
-            "article_summary": article.summary,
-            "article_keywords": ", ".join(article.keywords or []),
-            "article_url": article.url
-        })
+        result = await self.relevance_scorer.ainvoke(prompt.get_prompt())
         
         if isinstance(result, ArticleRelevanceScore):
             return result

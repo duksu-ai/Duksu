@@ -1,6 +1,4 @@
-from pydantic_settings import BaseSettings
-from pydantic import Field
-from typing import Optional, Any
+from typing import Optional
 import os
 import sys
 import langchain_openai
@@ -9,38 +7,65 @@ import langchain_google_genai
 import langchain_ollama
 from dotenv import load_dotenv
 
-
 load_dotenv()
 
-class Config(BaseSettings):
-    """Settings for the application using Pydantic BaseSettings for environment variables."""
-    
+
+class Config:
+    """configuration class for environment variable"""
+
     # Logging
-    LOG_LEVEL: str = Field(default="info")
+    @property
+    def LOG_LEVEL(self) -> str:
+        return os.getenv('LOG_LEVEL', 'info')
 
     # LLM Settings
-    MODEL_NAME: str = Field(default="gemini-2.5-flash-preview-04-17", description="Default model name")
-    OPENAI_API_KEY: Optional[str] = Field(default=None)
-    ANTHROPIC_API_KEY: Optional[str] = Field(default=None)
-    GEMINI_API_KEY: Optional[str] = Field(default=None)
-    OLLAMA_BASE_URL: str = Field(default="http://localhost:11434", description="Ollama server base URL")
-    
-    # Storage Settings
-    POSTGRES_DATABASE_URL: Optional[str] = Field(default=None, description="PostgreSQL connection string")
+    @property
+    def MODEL_NAME(self) -> str:
+        return os.getenv('MODEL_NAME', 'gemini-2.5-flash-preview-04-17')
 
-    S3_BUCKET_NAME: Optional[str] = Field(default=None, description="S3 bucket name")
-    S3_ENDPOINT_URL: Optional[str] = Field(default=None, description="S3 endpoint URL (for S3-compatible services like MinIO)")
-    S3_ACCESS_KEY: Optional[str] = Field(default=None, description="S3 access key ID")
-    S3_SECRET_KEY: Optional[str] = Field(default=None, description="S3 secret access key")
-    S3_REGION: str = Field(default="us-east-1", description="S3 region")
-    
+    @property
+    def OPENAI_API_KEY(self) -> Optional[str]:
+        return os.getenv('OPENAI_API_KEY')
+
+    @property
+    def ANTHROPIC_API_KEY(self) -> Optional[str]:
+        return os.getenv('ANTHROPIC_API_KEY')
+
+    @property
+    def GEMINI_API_KEY(self) -> Optional[str]:
+        return os.getenv('GEMINI_API_KEY')
+
+    @property
+    def OLLAMA_BASE_URL(self) -> str:
+        return os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
+
     # News Collection Settings
-    ARTICLE_KEYWORDS_MIN_COUNT: int = Field(default=3, description="Minimum number of keywords per article")
-    ARTICLE_KEYWORDS_MAX_COUNT: int = Field(default=5, description="Maximum number of keywords per article")
-    ARTICLE_SUMMARY_MIN_WORD_COUNT: int = Field(default=200, description="Minimum number of words in article summary")
-    ARTICLE_SUMMARY_MAX_WORD_COUNT: int = Field(default=400, description="Maximum number of words in article summary")
-    ARTICLE_PARSER_HTML_CHUNK_TOKEN_SIZE: int = Field(default=100000, description="Maximum token size of HTML chunk for article parser")
-    ARTICLE_PARSER_CONTENT_MAX_TOKEN_LENGTH: int = Field(default=100000, description="Maximum token length of article content for article parser")
+    @property
+    def ARTICLE_KEYWORDS_MIN_COUNT(self) -> int:
+        return int(os.getenv('ARTICLE_KEYWORDS_MIN_COUNT', '3'))
+
+    @property
+    def ARTICLE_KEYWORDS_MAX_COUNT(self) -> int:
+        return int(os.getenv('ARTICLE_KEYWORDS_MAX_COUNT', '5'))
+
+    @property
+    def ARTICLE_SUMMARY_MIN_WORD_COUNT(self) -> int:
+        return int(os.getenv('ARTICLE_SUMMARY_MIN_WORD_COUNT', '200'))
+
+    @property
+    def ARTICLE_SUMMARY_MAX_WORD_COUNT(self) -> int:
+        return int(os.getenv('ARTICLE_SUMMARY_MAX_WORD_COUNT', '400'))
+
+    @property
+    def ARTICLE_PARSER_HTML_CHUNK_TOKEN_SIZE(self) -> int:
+        return int(os.getenv('ARTICLE_PARSER_HTML_CHUNK_TOKEN_SIZE', '100000'))
+
+    @property
+    def ARTICLE_PARSER_CONTENT_MAX_TOKEN_LENGTH(self) -> int:
+        return int(os.getenv('ARTICLE_PARSER_CONTENT_MAX_TOKEN_LENGTH', '100000'))
+
+
+CONFIG = Config()
 
 
 def get_llm(model_name: Optional[str] = None, temperature: float = 0.0):
@@ -88,7 +113,5 @@ def get_llm(model_name: Optional[str] = None, temperature: float = 0.0):
         else:
             raise ValueError(f"Unsupported model: {model_name}.")
 
-
-CONFIG = Config()
 
 __all__ = ["CONFIG", "get_llm"]

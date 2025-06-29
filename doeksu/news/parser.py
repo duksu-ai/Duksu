@@ -7,7 +7,7 @@ from doeksu.news.model import NewsArticle
 from doeksu.logging_config import logger
 from pydantic import BaseModel, Field
 from doeksu.config import CONFIG
-import tiktoken
+from doeksu.agent.prompts import AIPrompt, SystemPrompt, count_tokens
 
 
 class ArticleContentExtraction(BaseModel):
@@ -16,17 +16,12 @@ class ArticleContentExtraction(BaseModel):
     keywords: List[str] = Field(description=f"{CONFIG.ARTICLE_KEYWORDS_MIN_COUNT}-{CONFIG.ARTICLE_KEYWORDS_MAX_COUNT} relevant keywords/tags for the article")
 
 
-class ArticleCompression(BaseModel):
-    compressed_text: str = Field(description="The compressed version of the text that retains key information while being shorter")
-
-
 class NewsArticleParser:
 
-    def __init__(self, llm_model: BaseLanguageModel):
-        self.llm_model = llm_model.with_structured_output(ArticleContentExtraction)
-        self.compression_model = llm_model.with_structured_output(ArticleCompression)
-        self.html_extraction_model = llm_model
-        self.tokenizer = tiktoken.encoding_for_model("gpt-4")
+    def __init__(self, llm_model: BaseLanguageModel, system_prompt: Optional[SystemPrompt] = None):
+        self.article_content_extraction_model = llm_model.with_structured_output(ArticleContentExtraction)
+        self.html_to_text_model = llm_model
+        self.system_prompt = system_prompt or SystemPrompt()
     
     async def parse_article(self, news_article: NewsArticle) -> NewsArticle:
         """
@@ -71,9 +66,6 @@ class NewsArticleParser:
             logger.error(f"Error parsing article {news_article.url}: {e}")
             raise e
     
-    def _count_tokens(self, text: str) -> int:
-        return len(self.tokenizer.encode(text))
-    
     def split_html_by_tokens(self, html: str, max_tokens: int) -> List[str]:
         """Split HTML content into chunks based on token count using LangChain's RecursiveCharacterTextSplitter."""
         
@@ -111,7 +103,7 @@ class NewsArticleParser:
             return ""
         
         max_tokens = CONFIG.ARTICLE_PARSER_HTML_CHUNK_TOKEN_SIZE
-        html_token_count = self._count_tokens(html)
+        html_token_count = count_tokens(html)
         
         if html_token_count <= max_tokens:
             return await self._extract_text_from_html_chunk(html)
@@ -123,21 +115,23 @@ class NewsArticleParser:
         
         extracted_texts = []
         for i, chunk in enumerate(chunks):
-            chunk_tokens = self._count_tokens(chunk)
+            chunk_tokens = count_tokens(chunk)
             logger.debug(f"Processing HTML chunk {i+1}/{len(chunks)} ({chunk_tokens} tokens)")
             extracted_text = await self._extract_text_from_html_chunk(chunk)
             if extracted_text.strip():
                 extracted_texts.append(extracted_text)
         
         combined_text = "\n\n".join(extracted_texts)
-        combined_tokens = self._count_tokens(combined_text)
+        combined_tokens = count_tokens(combined_text)
         logger.info(f"Article text extraction from HTML complete: {html_token_count} tokens -> {combined_tokens} tokens ({len(combined_text)} chars)")
         
         return combined_text
     
     async def _extract_text_from_html_chunk(self, html_chunk: str) -> str:
         """Extract article text from a single HTML chunk."""
-        extraction_prompt = f"""
+
+        prompt = AIPrompt(self.system_prompt)
+        prompt.add_task_prompt(f"""
 Extract the main article text content from the following HTML. 
 Focus on:
 1. The main article body text content
@@ -159,8 +153,9 @@ Return only the clean, readable article text content without any HTML tags or fo
 HTML Content:
 {html_chunk}
 """
+        )
         
-        response = await self.html_extraction_model.ainvoke(extraction_prompt)
+        response = await self.html_to_text_model.ainvoke(prompt.get_prompt())
         
         if hasattr(response, 'content'):
             return response.content
@@ -171,7 +166,7 @@ HTML Content:
     
     async def _extract_article_content(self, title: str, text: str, source: str) -> ArticleContentExtraction:
         max_tokens = CONFIG.ARTICLE_PARSER_CONTENT_MAX_TOKEN_LENGTH
-        content_tokens = self._count_tokens(text)
+        content_tokens = count_tokens(text)
         
         if content_tokens > max_tokens:
             logger.info(f"Article content ({content_tokens} tokens) exceeds max token limit ({max_tokens}). Truncating.")
@@ -187,7 +182,7 @@ HTML Content:
             current_tokens = 0
             
             for chunk in chunks:
-                chunk_tokens = self._count_tokens(chunk)
+                chunk_tokens = count_tokens(chunk)
                 if current_tokens + chunk_tokens <= max_tokens:
                     truncated_text += chunk + "\n\n"
                     current_tokens += chunk_tokens
@@ -195,9 +190,10 @@ HTML Content:
                     break
             
             text = truncated_text.strip()
-            logger.info(f"Truncated content to {self._count_tokens(text)} tokens")
+            logger.info(f"Truncated content to {count_tokens(text)} tokens")
         
-        extraction_prompt = f"""
+        prompt = AIPrompt(self.system_prompt)
+        prompt.add_task_prompt(f"""
 Analyze the following news article and extract the requested information:
 
 News Article:
@@ -205,8 +201,9 @@ News Article:
 - Source: {source}
 - Content: {text}
 """
+        )
 
-        response = await self.llm_model.ainvoke(extraction_prompt)
+        response = await self.article_content_extraction_model.ainvoke(prompt.get_prompt())
 
         if not isinstance(response, ArticleContentExtraction):
             raise ValueError(f"Unexpected response type while extracting article content: {type(response)}")

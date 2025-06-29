@@ -1,13 +1,13 @@
 import asyncio
 from typing import List, Optional, Dict, Any, Tuple
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.prompts import PromptTemplate
 from pydantic import BaseModel, Field
 
 from doeksu.news.model import NewsArticle
 from doeksu.feed.model import Feed, FeedItem, RelevanceScore
 from doeksu.feed.scorer import RelevancyScorer, ArticleRelevanceScore
 from doeksu.logging_config import logger
+from doeksu.agent.prompts import AIPrompt, SystemPrompt
 
 
 class FeedTopicGeneration(BaseModel):
@@ -27,41 +27,33 @@ class FeedCurator:
     News article curator for intelligent article selection.
     """
     
-    def __init__(self, llm_model: BaseLanguageModel):
+    def __init__(self, llm_model: BaseLanguageModel, system_prompt: Optional[SystemPrompt] = None):
         self.llm_model = llm_model
         self.topic_generator = llm_model.with_structured_output(FeedTopicGeneration)
         self.curator = llm_model.with_structured_output(CurationResult)
+        self.system_prompt = system_prompt or SystemPrompt()
         
         # Initialize the Scorers
-        self.relevancy_scorer = RelevancyScorer(llm_model)
-        
-        # Create prompt templates with advanced LangChain features
-        self._setup_prompts()
-    
-    def _setup_prompts(self):
-        """Setup prompt templates for different curation tasks."""
-        
-        self.topic_prompt = PromptTemplate(
-            input_variables=["query_prompt"],
-            template="""
-            Generate a concise, one-sentence topic name for a news feed based on the following query prompt.
-            The topic should be descriptive, professional, and capture the essence of what the user is looking for.
-            
-            Query Prompt: {query_prompt}
-            
-            Examples:
-            - Query: "What are recent developments in AI and machine learning?" 
-              Topic: "Recent AI and Machine Learning Developments"
-            - Query: "Show me news about climate change impacts on agriculture in developing countries"
-              Topic: "Climate Change Impact on Agriculture in Developing Nations"
-            """
-        )
+        self.relevancy_scorer = RelevancyScorer(llm_model, system_prompt)
 
     async def _generate_feed_topic(self, query_prompt: str) -> str:
         """Generate a concise feed topic from the query prompt."""
         try:
-            chain = self.topic_prompt | self.topic_generator
-            result = await chain.ainvoke({"query_prompt": query_prompt})
+            prompt = AIPrompt(self.system_prompt)
+            prompt.add_task_prompt(f"""
+Generate a concise, one-sentence topic name for a news feed based on the following query prompt.
+The topic should be descriptive, professional, and capture the essence of what the user is looking for.
+
+Query Prompt: {query_prompt}
+
+Examples:
+- Query: "What are recent developments in AI and machine learning?" 
+  Topic: "Recent AI and Machine Learning Developments"
+- Query: "Show me news about climate change impacts on agriculture in developing countries"
+  Topic: "Climate Change Impact on Agriculture in Developing Nations"
+""")
+            
+            result = await self.topic_generator.ainvoke(prompt.get_prompt())
             
             if isinstance(result, FeedTopicGeneration):
                 return result.feed_topic
