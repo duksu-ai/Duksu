@@ -22,7 +22,7 @@ class Config:
     @property
     def OBJECT_STORE_BASE_PATH(self) -> str:
         """Base path for local file system object store"""
-        return os.getenv('OBJECT_STORE_BASE_PATH', 'storage/objects')
+        return os.getenv('OBJECT_STORE_BASE_PATH', 'duksu')
 
     # S3 Object Store Settings
     @property

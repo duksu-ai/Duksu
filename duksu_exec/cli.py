@@ -17,14 +17,14 @@ def setup_argparser():
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
     
     add_user_parser = subparsers.add_parser("add-user", help="Add a new user")
-    add_user_parser.add_argument("user_id", help="User ID to add")
+    add_user_parser.add_argument("--user_id", help="User ID to add")
 
     create_news_feed_parser = subparsers.add_parser("create-news-feed", help="Create news feed workflow")
-    create_news_feed_parser.add_argument("user_id", help="User ID")
-    create_news_feed_parser.add_argument("query_prompt", help="Query prompt for news search")
+    create_news_feed_parser.add_argument("--user_id", help="User ID")
+    create_news_feed_parser.add_argument("--query_prompt", help="Query prompt for news search")
     
     populate_feed_parser = subparsers.add_parser("populate-feed", help="Populate existing feed with latest articles")
-    populate_feed_parser.add_argument("feed_id", type=int, help="Feed ID to populate")
+    populate_feed_parser.add_argument("--feed_id", type=int, help="Feed ID to populate")
     
     return parser
 

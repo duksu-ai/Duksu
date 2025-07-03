@@ -5,6 +5,8 @@ from sqlalchemy import pool
 
 from alembic import context
 
+from duksu_exec.config import CONFIG
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -19,6 +21,11 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 target_metadata = None
+
+# Override the sqlalchemy.url from alembic.ini with environment variable or config
+database_url = CONFIG.DATABASE_URL
+if database_url:
+    config.set_main_option("sqlalchemy.url", database_url)
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
