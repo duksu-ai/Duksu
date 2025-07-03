@@ -1,6 +1,4 @@
-# Doeksu
-
-A simple LLM workflow project using LangChain, LangGraph, and LangSmith.
+# Duksu
 
 ## Setup
 

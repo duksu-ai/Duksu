@@ -2,8 +2,8 @@ import json
 from langgraph.graph import StateGraph, END
 from langgraph.types import Send
 
-from doeksu_exec.storage.db import get_db
-from doeksu_exec.storage.model import NewsFeed
+from duksu_exec.storage.db import get_db
+from duksu_exec.storage.model import NewsFeed
 from .state import PopulateFeedState
 from .nodes.news_feed_manager import (
     create_news_search_execution_plans_node, 

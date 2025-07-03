@@ -13,7 +13,7 @@ from .storage.enums import WorkflowRunStatus
 
 def setup_argparser():
     """Set up command line argument parser."""
-    parser = argparse.ArgumentParser(description="Doeksu-exec CLI for news feed workflows")
+    parser = argparse.ArgumentParser(description="Duksu CLI for news feed workflows")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
     
     add_user_parser = subparsers.add_parser("add-user", help="Add a new user")

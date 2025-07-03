@@ -3,11 +3,11 @@ from typing import List, Optional, Dict, Any, Tuple
 from langchain.schema.language_model import BaseLanguageModel
 from pydantic import BaseModel, Field
 
-from doeksu.news.model import NewsArticle
-from doeksu.feed.model import NewsCuration, NewsCurationItem
-from doeksu.feed.scorer import RelevancyScorer
-from doeksu.logging_config import create_logger
-from doeksu.agent.prompts import AIPrompt, SystemPrompt
+from duksu.news.model import NewsArticle
+from duksu.feed.model import NewsCuration, NewsCurationItem
+from duksu.feed.scorer import RelevancyScorer
+from duksu.logging_config import create_logger
+from duksu.agent.prompts import AIPrompt, SystemPrompt
 
 
 class FeedTopicGeneration(BaseModel):

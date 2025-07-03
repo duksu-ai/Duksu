@@ -4,11 +4,11 @@ from bs4 import BeautifulSoup
 from newspaper import Article
 from langchain.schema.language_model import BaseLanguageModel
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from doeksu.news.model import NewsArticle
-from doeksu.logging_config import create_logger
+from duksu.news.model import NewsArticle
+from duksu.logging_config import create_logger
 from pydantic import BaseModel, Field
-from doeksu.config import CONFIG
-from doeksu.agent.prompts import AIPrompt, SystemPrompt, count_tokens
+from duksu.config import CONFIG
+from duksu.agent.prompts import AIPrompt, SystemPrompt, count_tokens
 import re
 
 

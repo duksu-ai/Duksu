@@ -3,8 +3,8 @@ from typing import List, Tuple, Optional
 from langchain.schema.language_model import BaseLanguageModel
 from pydantic import BaseModel, Field
 
-from doeksu.news.model import NewsArticle
-from doeksu.agent.prompts import AIPrompt, SystemPrompt
+from duksu.news.model import NewsArticle
+from duksu.agent.prompts import AIPrompt, SystemPrompt
 
 
 class RelevanceScore(BaseModel):

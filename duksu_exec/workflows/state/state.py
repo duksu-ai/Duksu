@@ -3,7 +3,7 @@ from typing import Annotated, TypedDict, List, Dict, Any, Optional
 
 from pydantic import BaseModel
 
-from doeksu.news.model import NewsArticle
+from duksu.news.model import NewsArticle
 
 
 class BaseState(TypedDict):

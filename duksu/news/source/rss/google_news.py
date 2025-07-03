@@ -3,12 +3,12 @@ import aiohttp
 from typing import List, Optional
 from urllib.parse import urlencode
 from googlenewsdecoder import gnewsdecoder
-from doeksu.news.model import NewsArticle
-from doeksu.news.source.registry import news_source
-from doeksu.logging_config import logger
+from duksu.news.model import NewsArticle
+from duksu.news.source.registry import news_source
+from duksu.logging_config import logger
 from pydantic import BaseModel, Field
 
-from doeksu.utils.time import convert_date_str_to_timestamp
+from duksu.utils.time import convert_date_str_to_timestamp
 
 
 class GoogleNewsParam(BaseModel):

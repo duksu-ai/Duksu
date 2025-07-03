@@ -4,10 +4,10 @@ import json
 from pathlib import Path
 from typing import List
 
-from doeksu.news.model import NewsArticle
-from doeksu.feed.curator import FeedCurator
-from doeksu.feed.model import Feed
-from doeksu.config import get_llm
+from duksu.news.model import NewsArticle
+from duksu.feed.curator import FeedCurator
+from duksu.feed.model import Feed
+from duksu.config import get_llm
 
 
 class TestFeedCurator:

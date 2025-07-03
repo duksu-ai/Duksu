@@ -3,7 +3,7 @@ from email.utils import parsedate_to_datetime
 import re
 import time
 
-from doeksu.logging_config import logger
+from duksu.logging_config import logger
 
 
 def parse_age_literal_to_seconds(age_literal: str) -> int:

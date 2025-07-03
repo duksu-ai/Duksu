@@ -2,13 +2,13 @@ import json
 from typing import List
 
 from langchain_core.rate_limiters import InMemoryRateLimiter
-from doeksu.config import get_llm
-from doeksu.feed import FeedCurator
-from doeksu.news.source import NewsSourceRegistry
-from doeksu.news.reader import ArticleContentNotAccessibleError, NewsArticleReader
-from doeksu.news.model import NewsArticle
-from doeksu.logging_config import logger
-from doeksu_exec.workflows.state.state import ArticlesRetrievalState, NewsSearchExecution
+from duksu.config import get_llm
+from duksu.feed import FeedCurator
+from duksu.news.source import NewsSourceRegistry
+from duksu.news.reader import ArticleContentNotAccessibleError, NewsArticleReader
+from duksu.news.model import NewsArticle
+from duksu.logging_config import logger
+from duksu_exec.workflows.state.state import ArticlesRetrievalState, NewsSearchExecution
 from ..state import CreateNewsFeedState, PopulateFeedState
 from ...storage.db import Storage, get_db
 from ...storage.model import NewsFeed, NewsArticle as DBNewsArticle, NewsFeedItem

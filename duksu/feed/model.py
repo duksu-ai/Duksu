@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
-from doeksu.news.model import NewsArticle
+from duksu.news.model import NewsArticle
 
 
 @dataclass

@@ -7,12 +7,12 @@ from inspect import iscoroutinefunction, signature
 from pathlib import Path
 
 from langchain_core.language_models import BaseLanguageModel
-from doeksu.agent.prompts import AIPrompt, SystemPrompt
-from doeksu.config import CONFIG
-from doeksu.news.model import NewsArticle
+from duksu.agent.prompts import AIPrompt, SystemPrompt
+from duksu.config import CONFIG
+from duksu.news.model import NewsArticle
 from pydantic import BaseModel, Field
-from doeksu.logging_config import create_logger
-from doeksu.utils.time import parse_age_literal_to_seconds
+from duksu.logging_config import create_logger
+from duksu.utils.time import parse_age_literal_to_seconds
 
 
 @dataclass

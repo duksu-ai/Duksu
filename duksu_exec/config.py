@@ -11,7 +11,7 @@ class Config:
     # Database Settings
     @property
     def DATABASE_URL(self) -> str:
-        return os.getenv('DATABASE_URL', 'postgresql+psycopg2://postgres:1234@localhost/doeksu')
+        return os.getenv('DATABASE_URL', 'postgresql+psycopg2://postgres:1234@localhost/duksu')
 
     # Object Store Settings
     @property

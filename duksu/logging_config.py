@@ -1,9 +1,9 @@
 import logging
 import sys
-from doeksu.config import CONFIG
+from duksu.config import CONFIG
 
 
-def configure_logger(name: str = "doeksu"):
+def configure_logger(name: str = "duksu"):
     """Configure and return the logger for the application."""
     logger = logging.getLogger(name)
     log_level = getattr(logging, CONFIG.LOG_LEVEL.upper())
@@ -25,8 +25,8 @@ def configure_logger(name: str = "doeksu"):
 
 
 def create_logger(module_name: str):
-    """Get a logger for a specific module with doeksu namespace."""
-    logger = configure_logger(f"doeksu.{module_name}")
+    """Get a logger for a specific module with duksu namespace."""
+    logger = configure_logger(f"duksu.{module_name}")
     # Prevent log propagation to parent logger to avoid duplicates
     logger.propagate = False
     return logger

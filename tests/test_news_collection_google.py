@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from urllib.parse import urlencode
 
-from doeksu.news.source.rss.google_news import (
+from duksu.news.source.rss.google_news import (
     GoogleNewsParam,
     GoogleNewsSearchParam,
     get_google_news_rss_url,

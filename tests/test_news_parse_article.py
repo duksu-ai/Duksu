@@ -4,9 +4,9 @@ import json
 from pathlib import Path
 import re
 
-from doeksu.news.model import NewsArticle
-from doeksu.news.parser import NewsArticleParser
-from doeksu.config import get_llm, CONFIG
+from duksu.news.model import NewsArticle
+from duksu.news.parser import NewsArticleParser
+from duksu.config import get_llm, CONFIG
 
 
 class TestNewsArticleParser:
