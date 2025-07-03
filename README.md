@@ -35,23 +35,6 @@ DATABASE_URL=postgresql+psycopg2://postgres:1234@localhost:5432/duksu
 alembic upgrade head
 ```
 
-## Migration
-
-Apply migrations when new migration files are added:
-```bash
-alembic upgrade head
-```
-
-If you have modified existing migration files and want to reapply them:
-1. Rollback migrations (where `i` is the number of migration files from latest to revert):
-```bash
-alembic downgrade -i
-```
-2. Then apply migrations again:
-```bash
-alembic upgrade head
-```
-
 
 ## Usage
 
@@ -72,6 +55,24 @@ python -m duksu_exec.cli create-news-feed --user_id=<user id> --query_prompt="<q
 ### Populate feed with curated news articles that match the user's query prompt
 ```bash
 python -m duksu_exec.cli populate-feed --feed_id=<feed_id>
+```
+
+
+## Migration
+
+Apply migrations when new migration files are added:
+```bash
+alembic upgrade head
+```
+
+If you have modified existing migration files and want to reapply them:
+1. Rollback migrations (where `i` is the number of migration files from latest to revert):
+```bash
+alembic downgrade -i
+```
+2. Then apply migrations again:
+```bash
+alembic upgrade head
 ```
 
 
