@@ -4,13 +4,11 @@ from langchain.schema.language_model import BaseLanguageModel
 from pydantic import BaseModel, Field
 
 from doeksu.news.model import NewsArticle
-from doeksu.logging_config import logger
 from doeksu.agent.prompts import AIPrompt, SystemPrompt
 
 
-class ArticleRelevanceScore(BaseModel):
-    """Model for scoring article relevance to query."""
-    article_url: str = Field(description="The URL of the article being scored")
+class RelevanceScore(BaseModel):
+    """Model for scoring item relevance to query."""
     relevance_score: float = Field(
         description="Relevance score from 0.0 to 1.0, where 1.0 is most relevant",
         ge=0.0,
@@ -33,25 +31,22 @@ class RelevancyScorer:
             llm_model: Language model to use for scoring
             system_prompt: Optional system prompt to use for scoring
         """
-        self.relevance_scorer = llm_model.with_structured_output(ArticleRelevanceScore)
+        self.relevance_scorer = llm_model.with_structured_output(RelevanceScore)
         self.system_prompt = system_prompt or SystemPrompt()
     
     async def score_article(
         self, 
         article: NewsArticle, 
         query_prompt: str
-    ) -> ArticleRelevanceScore:
+    ) -> RelevanceScore:
         """
         Score a single's relevance to the query prompt.
         """
-        if not article.is_hydrated:
-            raise ValueError(f"Article must be hydrated before scoring: {article.url}")
-        
         prompt = AIPrompt(self.system_prompt)
         prompt.add_task_prompt(f"""
 Score the relevance of this news article to the given query prompt.
 
-Query Prompt: {query_prompt}
+User Query Prompt: I want to know about {query_prompt}
 
 Article Details:
 - Title: {article.title}
@@ -59,26 +54,36 @@ Article Details:
 - Keywords: {", ".join(article.keywords or [])}
 - URL: {article.url}
 
-Provide a relevance score from 0.0 to 1.0 where:
-- 1.0 = Perfectly matches the query intent and topic
-- 0.8-0.9 = Highly relevant with strong connection to query
-- 0.6-0.7 = Moderately relevant with some connection
-- 0.4-0.5 = Tangentially related
+Provide a relevance score from 0.0 to 1.0 using this two-step approach:
+
+STEP 1 - Base Relevancy (determines tier):
+- 0.8 = Highly relevant with strong connection to query topic
+- 0.6 = Moderately relevant with some connection to query topic  
+- 0.4 = Tangentially related to query topic
 - 0.0-0.3 = Not relevant or off-topic
 
-Consider:
-1. Direct topic match
-2. Keyword alignment
-3. Content depth and quality
-4. Recency and timeliness
-5. Source credibility
+Consider for base relevancy:
+1. Direct topic match - Does the article address the query topic?
+2. Content depth and quality - Is this substantial, well-written content?
+3. Keyword alignment - How well do article keywords match query intent?
+4. Source credibility - Is this from a reputable source?
 
-Be precise and analytical in your scoring. Provide clear reasoning for your score.
+STEP 2 - User Interest Boost:
+If the article would genuinely engage and interest someone asking this query, add +0.1 to the base score:
+- 0.8 → 0.9 or 1.0 (highly relevant + engaging)
+- 0.6 → 0.7 (moderately relevant + engaging)
+- 0.4 → 0.5 (tangentially relevant + engaging)
+
+Consider for user interest boost:
+- Uniqueness of insights, surprising angles, practical implications, compelling narratives
+- Would this article be genuinely fascinating vs dry/routine for someone with this query?
+
+Provide clear reasoning that explains both the base relevancy tier and whether the user interest boost applies.
 """)
         
         result = await self.relevance_scorer.ainvoke(prompt.get_prompt())
         
-        if isinstance(result, ArticleRelevanceScore):
+        if isinstance(result, RelevanceScore):
             return result
         else:
             raise ValueError(f"Unexpected scoring response: {type(result)}")
@@ -88,7 +93,7 @@ Be precise and analytical in your scoring. Provide clear reasoning for your scor
         articles: List[NewsArticle],
         query_prompt: str,
         min_score: float = 0.5
-    ) -> List[Tuple[NewsArticle, ArticleRelevanceScore]]:
+    ) -> List[Tuple[NewsArticle, RelevanceScore]]:
         """
         Score articles and filter by minimum relevance score.
         """
@@ -96,7 +101,6 @@ Be precise and analytical in your scoring. Provide clear reasoning for your scor
             (article, await self.score_article(article, query_prompt))
             for article in articles
         ]
-        scored_articles.sort(key=lambda x: x[1].relevance_score, reverse=True)
         
         relevant_articles = [
             (article, score) for article, score in scored_articles

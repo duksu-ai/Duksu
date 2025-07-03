@@ -1,3 +1,3 @@
-from .relevancy_scorer import RelevancyScorer, ArticleRelevanceScore
+from .relevancy_scorer import RelevancyScorer, RelevanceScore
 
-__all__ = ["RelevancyScorer", "ArticleRelevanceScore"] 
+__all__ = ["RelevancyScorer", "RelevanceScore"] 

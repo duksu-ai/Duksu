@@ -6,3 +6,5 @@ __pycache__/
 *.pyd
 tests/output/
 .pytest_cache/
+alembic.ini
+storage/

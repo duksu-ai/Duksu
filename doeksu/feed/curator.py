@@ -4,9 +4,9 @@ from langchain.schema.language_model import BaseLanguageModel
 from pydantic import BaseModel, Field
 
 from doeksu.news.model import NewsArticle
-from doeksu.feed.model import Feed, FeedItem, RelevanceScore
-from doeksu.feed.scorer import RelevancyScorer, ArticleRelevanceScore
-from doeksu.logging_config import logger
+from doeksu.feed.model import NewsCuration, NewsCurationItem
+from doeksu.feed.scorer import RelevancyScorer
+from doeksu.logging_config import create_logger
 from doeksu.agent.prompts import AIPrompt, SystemPrompt
 
 
@@ -27,16 +27,17 @@ class FeedCurator:
     News article curator for intelligent article selection.
     """
     
-    def __init__(self, llm_model: BaseLanguageModel, system_prompt: Optional[SystemPrompt] = None):
-        self.llm_model = llm_model
-        self.topic_generator = llm_model.with_structured_output(FeedTopicGeneration)
-        self.curator = llm_model.with_structured_output(CurationResult)
+    def __init__(self, llm: BaseLanguageModel, system_prompt: Optional[SystemPrompt] = None):
+        self.llm = llm
+        self.topic_generator = llm.with_structured_output(FeedTopicGeneration)
+        self.curator = llm.with_structured_output(CurationResult)
         self.system_prompt = system_prompt or SystemPrompt()
+        self.logger = create_logger("FeedCurator")
         
         # Initialize the Scorers
-        self.relevancy_scorer = RelevancyScorer(llm_model, system_prompt)
+        self.relevancy_scorer = RelevancyScorer(llm, system_prompt)
 
-    async def _generate_feed_topic(self, query_prompt: str) -> str:
+    async def generate_feed_topic(self, query_prompt: str) -> str:
         """Generate a concise feed topic from the query prompt."""
         try:
             prompt = AIPrompt(self.system_prompt)
@@ -61,60 +62,70 @@ Examples:
                 raise ValueError(f"Unexpected topic generation response: {type(result)}")
                 
         except Exception as e:
-            logger.error(f"Error generating feed topic: {e}")
+            self.logger.error(f"Error generating feed topic: {e}")
             # Fallback to a simple topic generation
             return f"News Feed: {query_prompt[:50]}..."
     
     async def curate_news_feed(
         self,
-        articles: List[NewsArticle],
+        feed_topic: str,
         query_prompt: str,
-        max_articles: Optional[int] = None,
-        min_relevance_score: float = 0.5,
-    ) -> Feed:
+        articles: List[NewsArticle],
+        min_relevance_score: float,
+        max_articles_per_batch: Optional[int] = None,        
+    ) -> NewsCuration:
         """
         Curate a news feed from a list of articles based on a query prompt.
         """
         assert query_prompt.strip() != ""
 
-        logger.info(f"Starting news curation job; query_prompt: {query_prompt[:100]}; articles: {[article.title[:30] + '...' if len(article.title) > 30 else article.title for article in articles]}")
+        self.logger.info(f"Starting news curation job; query_prompt: \"{query_prompt[:100]}\"; considering {len(articles)} articles; articles per batch: {max_articles_per_batch}")
         
         try:
-            feed_topic = await self._generate_feed_topic(query_prompt)
-            relevant_articles = await self.relevancy_scorer.filter_by_relevance_score(
-                articles, query_prompt, min_relevance_score
-            )
+            relevant_articles = []
+            articles_batches = [articles] if max_articles_per_batch is None else [articles[i:i + max_articles_per_batch] for i in range(0, len(articles), max_articles_per_batch)]
+
+            count = 0
+            for batch in articles_batches:
+                count += 1
+                self.logger.debug(f"Scoring batch ({count}/{len(articles_batches)}) of {len(batch)} articles")
+
+                relevant_articles_in_batch = await self.relevancy_scorer.filter_by_relevance_score(
+                    batch, query_prompt, min_relevance_score
+                )
+                self.logger.debug(f"Found {len(relevant_articles_in_batch)} relevant articles in batch")
+
+                relevant_articles.extend(relevant_articles_in_batch)
             
             if not relevant_articles:
-                logger.warning("No articles met the minimum relevance criteria")
-                return Feed(
+                self.logger.warning("No articles met the minimum relevance criteria")
+                return NewsCuration(
                     query_prompt=query_prompt,
                     feed_topic=feed_topic,
                     items=[]
                 )
+
+            # Sort articles by relevance score in descending order
+            relevant_articles.sort(key=lambda x: x[1].relevance_score, reverse=True)
             
-            # Create FeedItems with scores
-            selected_items = []
-            articles_to_process = relevant_articles if max_articles is None else relevant_articles[:max_articles]
-            
-            for article, relevance_score in articles_to_process:
-                feed_item = FeedItem(
+            curation_items = []
+            for article, relevance_score in relevant_articles:
+                curation_items.append(NewsCurationItem(
                     item=article,
                     scores={
-                        "relevance": RelevanceScore(
-                            score=relevance_score.relevance_score,
-                            reasoning=relevance_score.reasoning
-                        )
+                        "relevance": {
+                            "score": relevance_score.relevance_score,
+                            "reasoning": relevance_score.reasoning
+                        }
                     }
-                )
-                selected_items.append(feed_item)
+                ))
             
-            return Feed(
+            return NewsCuration(
                 query_prompt=query_prompt,
                 feed_topic=feed_topic,
-                items=selected_items
+                items=curation_items
             )
             
         except Exception as e:
-            logger.error(f"Error during curation: {e}")
+            self.logger.error(f"Error during curation: {e}")
             raise

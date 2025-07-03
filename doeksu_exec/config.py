@@ -11,33 +11,44 @@ class Config:
     # Database Settings
     @property
     def DATABASE_URL(self) -> str:
-        return os.getenv('DATABASE_URL', 'postgresql+psycopg2://username:password@localhost/doeksu_exec')
+        return os.getenv('DATABASE_URL', 'postgresql+psycopg2://postgres:1234@localhost/doeksu')
 
-    # Logging
+    # Object Store Settings
     @property
-    def LOG_LEVEL(self) -> str:
-        return os.getenv('LOG_LEVEL', 'info')
-
-    # LLM Settings (inheriting from doeksu config)
-    @property
-    def MODEL_NAME(self) -> str:
-        return os.getenv('MODEL_NAME', 'gemini-2.5-flash-preview-04-17')
+    def OBJECT_STORE_TYPE(self) -> str:
+        """Object store type: 'local' or 's3'"""
+        return os.getenv('OBJECT_STORE_TYPE', 'local')
 
     @property
-    def OPENAI_API_KEY(self) -> Optional[str]:
-        return os.getenv('OPENAI_API_KEY')
+    def OBJECT_STORE_BASE_PATH(self) -> str:
+        """Base path for local file system object store"""
+        return os.getenv('OBJECT_STORE_BASE_PATH', 'storage/objects')
+
+    # S3 Object Store Settings
+    @property
+    def S3_BUCKET_NAME(self) -> Optional[str]:
+        """S3 bucket name for object storage"""
+        return os.getenv('S3_BUCKET_NAME')
 
     @property
-    def ANTHROPIC_API_KEY(self) -> Optional[str]:
-        return os.getenv('ANTHROPIC_API_KEY')
+    def S3_REGION(self) -> str:
+        """S3 region"""
+        return os.getenv('S3_REGION', 'us-east-1')
 
     @property
-    def GEMINI_API_KEY(self) -> Optional[str]:
-        return os.getenv('GEMINI_API_KEY')
+    def S3_ACCESS_KEY_ID(self) -> Optional[str]:
+        """S3 access key ID"""
+        return os.getenv('S3_ACCESS_KEY_ID')
 
     @property
-    def OLLAMA_BASE_URL(self) -> str:
-        return os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
+    def S3_SECRET_ACCESS_KEY(self) -> Optional[str]:
+        """S3 secret access key"""
+        return os.getenv('S3_SECRET_ACCESS_KEY')
+
+    @property
+    def S3_ENDPOINT_URL(self) -> Optional[str]:
+        """S3 endpoint URL (for S3-compatible services like MinIO)"""
+        return os.getenv('S3_ENDPOINT_URL')
 
 
 CONFIG = Config()

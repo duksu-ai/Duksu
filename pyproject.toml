@@ -30,10 +30,12 @@ dependencies = [
     "lxml_html_clean",
     "googlenewsdecoder",
     "newspaper3k",
+    "beautifulsoup4",
 
     "sqlalchemy",
     "alembic",
     "psycopg2-binary",
+    "boto3",
 ]
 
 [tool.black]

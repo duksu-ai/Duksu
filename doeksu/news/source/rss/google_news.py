@@ -2,28 +2,26 @@ import feedparser
 import aiohttp
 from typing import List, Optional
 from urllib.parse import urlencode
-from dataclasses import dataclass
-from datetime import datetime
-import time
-from email.utils import parsedate_to_datetime
 from googlenewsdecoder import gnewsdecoder
 from doeksu.news.model import NewsArticle
 from doeksu.news.source.registry import news_source
 from doeksu.logging_config import logger
+from pydantic import BaseModel, Field
+
+from doeksu.utils.time import convert_date_str_to_timestamp
 
 
-@dataclass
-class GoogleNewsParam:
+class GoogleNewsParam(BaseModel):
     """Parameters for Google News RSS sources."""
-    language: str = "en"
-    country: str = "US"
+    language: str = Field(default="en", description="Language code for news")
+    country: str = Field(default="US", description="Country code for news")
 
-@dataclass
-class GoogleNewsSearchParam:
+
+class GoogleNewsSearchParam(BaseModel):
     """Parameters for Google News search RSS sources."""
-    search_keyword: str
-    language: str = "en"
-    country: str = "US"
+    search_keyword: str = Field(description="Search keyword for news articles")
+    language: str = Field(default="en", description="Language code for news (e.g., 'en', 'es', 'fr', 'de', 'it', 'ja', 'ko', 'zh')")
+    country: str = Field(default="US", description="Country code for news (e.g., 'US', 'GB', 'FR', 'DE', 'IT', 'JP', 'KR', 'CN')")
 
 
 # Google News topic IDs
@@ -53,25 +51,6 @@ def get_google_news_rss_url(topic: str, param: GoogleNewsParam) -> str:
         "ceid": f"{param.country}:{param.language}"
     }
     return f"{base_url}/topics/{topic_id}?{urlencode(params)}"
-
-
-def convert_published_date_to_timestamp(date_str: str) -> int:
-    """Parse RSS published date string to unix timestamp."""
-    if not date_str:
-        return int(time.time())  # Current time as fallback
-    
-    try:
-        # Try parsing RFC 2822 format (common in RSS)
-        dt = parsedate_to_datetime(date_str)
-        return int(dt.timestamp())
-    except Exception:
-        try:
-            # Try ISO format
-            dt = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
-            return int(dt.timestamp())
-        except Exception:
-            logger.warning(f"Could not parse date '{date_str}', using current time")
-            return int(time.time())
 
 
 def clean_article_title(title: str) -> str:
@@ -130,7 +109,7 @@ async def fetch_google_news_rss(url: str) -> List[NewsArticle]:
             google_redirect_url = str(entry.get('link', ''))
             source = getattr(entry.get('source', ''), 'title', str(entry.get('source', '')))
 
-            published_at = convert_published_date_to_timestamp(str(entry.get('published', '')))
+            published_at = convert_date_str_to_timestamp(str(entry.get('published', '')))
             
             article_url = decode_google_news_url(google_redirect_url)
             if article_url is None:
@@ -145,7 +124,7 @@ async def fetch_google_news_rss(url: str) -> List[NewsArticle]:
             )
             articles.append(article)
         
-        logger.info(f"Successfully parsed {len(articles)} articles from {url}")
+        logger.info(f"Successfully fetched {len(articles)} articles from news source url: {url}")
         return articles
         
     except Exception as e:
@@ -153,116 +132,108 @@ async def fetch_google_news_rss(url: str) -> List[NewsArticle]:
         return []
 
 
-# @news_source(
-#     source_name="Google News Top Stories",
-#     description="General top headlines from Google News with country and language localization",
-#     param_type=GoogleNewsParam
-# )
-# async def google_news_top_stories(param: GoogleNewsParam = GoogleNewsParam()) -> List[NewsArticle]:
-#     """Get general top news from Google News RSS."""
-#     logger.info(f"Fetching Google News Top Stories from: {param}")
-#     base_url = "https://news.google.com/rss"
-#     params = {
-#         "hl": f"{param.language}-{param.country}",
-#         "gl": param.country,
-#         "ceid": f"{param.country}:{param.language}"
-#     }
-#     url = f"{base_url}?{urlencode(params)}"
-#     return await fetch_google_news_rss(url)
+@news_source(
+    source_name="Google News Top Stories",
+    description="General top headlines from Google News with country and language localization",
+    param_model=GoogleNewsParam
+)
+async def google_news_top_stories(param: GoogleNewsParam = GoogleNewsParam()) -> List[NewsArticle]:
+    """Get general top news from Google News RSS."""
+    logger.info(f"Fetching Google News Top Stories from: {param}")
+    base_url = "https://news.google.com/rss"
+    params = {
+        "hl": f"{param.language}-{param.country}",
+        "gl": param.country,
+        "ceid": f"{param.country}:{param.language}"
+    }
+    url = f"{base_url}?{urlencode(params)}"
+    return await fetch_google_news_rss(url)
 
 
 @news_source(
     source_name="Google News World",
-    description="World news from Google News RSS",
-    param_type=GoogleNewsParam
+    description="Worldwide news from Google News with optional language and country customization",
+    param_model=GoogleNewsParam
 )
 async def google_news_world(param: GoogleNewsParam = GoogleNewsParam()) -> List[NewsArticle]:
     """Get world news from Google News RSS."""
-    logger.info(f"Fetching Google News World from: {param}")
     url = get_google_news_rss_url("world", param)
     return await fetch_google_news_rss(url)
 
 
 @news_source(
     source_name="Google News Business",
-    description="Business news from Google News RSS",
-    param_type=GoogleNewsParam
+    description="Business news from Google News with optional language and country customization",
+    param_model=GoogleNewsParam
 )
 async def google_news_business(param: GoogleNewsParam = GoogleNewsParam()) -> List[NewsArticle]:
     """Get business news from Google News RSS."""
-    logger.info(f"Fetching Google News Business from: {param}")
     url = get_google_news_rss_url("business", param)
     return await fetch_google_news_rss(url)
 
 
 @news_source(
     source_name="Google News Technology",
-    description="Technology news from Google News RSS",
-    param_type=GoogleNewsParam
+    description="Technology news from Google News with optional language and country customization",
+    param_model=GoogleNewsParam
 )
 async def google_news_technology(param: GoogleNewsParam = GoogleNewsParam()) -> List[NewsArticle]:
     """Get technology news from Google News RSS."""
-    logger.info(f"Fetching Google News Technology from: {param}")
     url = get_google_news_rss_url("technology", param)
     return await fetch_google_news_rss(url)
 
 
 @news_source(
     source_name="Google News Entertainment",
-    description="Entertainment news from Google News RSS",
-    param_type=GoogleNewsParam
+    description="Entertainment news from Google News with optional language and country customization",
+    param_model=GoogleNewsParam
 )
 async def google_news_entertainment(param: GoogleNewsParam = GoogleNewsParam()) -> List[NewsArticle]:
     """Get entertainment news from Google News RSS."""
-    logger.info(f"Fetching Google News Entertainment from: {param}")
     url = get_google_news_rss_url("entertainment", param)
     return await fetch_google_news_rss(url)
 
 
 @news_source(
     source_name="Google News Sports",
-    description="Sports news from Google News RSS",
-    param_type=GoogleNewsParam
+    description="Sports news from Google News with optional language and country customization",
+    param_model=GoogleNewsParam
 )
 async def google_news_sports(param: GoogleNewsParam = GoogleNewsParam()) -> List[NewsArticle]:
     """Get sports news from Google News RSS."""
-    logger.info(f"Fetching Google News Sports from: {param}")
     url = get_google_news_rss_url("sports", param)
     return await fetch_google_news_rss(url)
 
 
 @news_source(
     source_name="Google News Science",
-    description="Science news from Google News RSS",
-    param_type=GoogleNewsParam
+    description="Science news from Google News with optional language and country customization",
+    param_model=GoogleNewsParam
 )
 async def google_news_science(param: GoogleNewsParam = GoogleNewsParam()) -> List[NewsArticle]:
     """Get science news from Google News RSS."""
-    logger.info(f"Fetching Google News Science from: {param}")
     url = get_google_news_rss_url("science", param)
     return await fetch_google_news_rss(url)
 
 
 @news_source(
     source_name="Google News Health",
-    description="Health news from Google News RSS",
-    param_type=GoogleNewsParam
+    description="Health news from Google News with optional language and country customization",
+    param_model=GoogleNewsParam
 )
 async def google_news_health(param: GoogleNewsParam = GoogleNewsParam()) -> List[NewsArticle]:
     """Get health news from Google News RSS."""
-    logger.info(f"Fetching Google News Health from: {param}")
     url = get_google_news_rss_url("health", param)
     return await fetch_google_news_rss(url)
 
 
 @news_source(
     source_name="Google News Search",
-    description="Custom keyword search from Google News RSS",
-    param_type=GoogleNewsSearchParam
+    description="Custom keyword search from Google News, useful to answer if user query is specific and not fully covered by other general sources",
+    param_model=GoogleNewsSearchParam
 )
 async def google_news_search(param: GoogleNewsSearchParam) -> List[NewsArticle]:
-    """Get search-based news from Google News RSS."""
-    logger.info(f"Fetching Google News Search from: {param.search_keyword}")
+    """Get search-based news from Google News RSS using explicit parameter model."""
     base_url = "https://news.google.com/rss"
     params = {
         "q": param.search_keyword,

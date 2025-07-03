@@ -5,6 +5,7 @@ import langchain_openai
 import langchain_anthropic
 import langchain_google_genai
 import langchain_ollama
+from langchain_core.rate_limiters import InMemoryRateLimiter
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -41,6 +42,14 @@ class Config:
 
     # News Collection Settings
     @property
+    def ARTICLE_COLLECTION_AGE_CAP(self) -> str:
+        return os.getenv('ARTICLE_COLLECTION_AGE_CAP', '30d')
+
+    @property
+    def ARTICLE_REGISTRY_MAX_NEWS_SOURCES(self) -> int:
+        return int(os.getenv('ARTICLE_REGISTRY_MAX_NEWS_SOURCES', '3'))
+
+    @property
     def ARTICLE_KEYWORDS_MIN_COUNT(self) -> int:
         return int(os.getenv('ARTICLE_KEYWORDS_MIN_COUNT', '3'))
 
@@ -50,15 +59,11 @@ class Config:
 
     @property
     def ARTICLE_SUMMARY_MIN_WORD_COUNT(self) -> int:
-        return int(os.getenv('ARTICLE_SUMMARY_MIN_WORD_COUNT', '200'))
+        return int(os.getenv('ARTICLE_SUMMARY_MIN_WORD_COUNT', '100'))
 
     @property
     def ARTICLE_SUMMARY_MAX_WORD_COUNT(self) -> int:
-        return int(os.getenv('ARTICLE_SUMMARY_MAX_WORD_COUNT', '400'))
-
-    @property
-    def ARTICLE_PARSER_HTML_CHUNK_TOKEN_SIZE(self) -> int:
-        return int(os.getenv('ARTICLE_PARSER_HTML_CHUNK_TOKEN_SIZE', '100000'))
+        return int(os.getenv('ARTICLE_SUMMARY_MAX_WORD_COUNT', '200'))
 
     @property
     def ARTICLE_PARSER_CONTENT_MAX_TOKEN_LENGTH(self) -> int:
@@ -68,7 +73,7 @@ class Config:
 CONFIG = Config()
 
 
-def get_llm(model_name: Optional[str] = None, temperature: float = 0.0):
+def get_llm(model_name: Optional[str] = None, temperature: float = 0.0, rate_limiter: Optional[InMemoryRateLimiter] = None):
     """Get the language model based on config."""
 
     model_name = model_name or CONFIG.MODEL_NAME or "gemini-2.5-flash-preview-04-17"
@@ -81,37 +86,37 @@ def get_llm(model_name: Optional[str] = None, temperature: float = 0.0):
     if CONFIG.GEMINI_API_KEY:
         os.environ['GOOGLE_API_KEY'] = CONFIG.GEMINI_API_KEY
 
-    if model_name:
-        if model_name.startswith('gpt'):
-            if not CONFIG.OPENAI_API_KEY:
-                print('⚠️  OpenAI API key not found or langchain-openai not installed. Please update your config or set OPENAI_API_KEY environment variable.')
-                sys.exit(1)
-            return langchain_openai.ChatOpenAI(model=model_name, temperature=temperature)
-        elif model_name.startswith('claude'):
-            if not CONFIG.ANTHROPIC_API_KEY:
-                print('⚠️  Anthropic API key not found or langchain-anthropic not installed. Please update your config or set ANTHROPIC_API_KEY environment variable.')
-                sys.exit(1)
-            return langchain_anthropic.ChatAnthropic(model_name=model_name, temperature=temperature, timeout=30, stop=None)
-        elif model_name.startswith('gemini'):
-            if not CONFIG.GEMINI_API_KEY:
-                print('⚠️  Google API key not found or langchain-google-genai not installed. Please update your config or set GEMINI_API_KEY environment variable.')
-                sys.exit(1)
-            return langchain_google_genai.ChatGoogleGenerativeAI(model=model_name, temperature=temperature)
-        elif model_name.startswith('ollama-'):
-            # Support for Ollama models with ollama- prefix
-            actual_model_name = model_name[7:]  # Remove 'ollama-' prefix
-            try:
-                return langchain_ollama.ChatOllama(
-                    model=actual_model_name,
-                    temperature=temperature,
-                    base_url=CONFIG.OLLAMA_BASE_URL
-                )
-            except Exception as e:
-                print(f'⚠️  Failed to connect to Ollama at {CONFIG.OLLAMA_BASE_URL}. Make sure Ollama is running and the model "{actual_model_name}" is available.')
-                print(f'   Error: {e}')
-                sys.exit(1)
-        else:
-            raise ValueError(f"Unsupported model: {model_name}.")
+    if model_name.startswith('gpt'):
+        if not CONFIG.OPENAI_API_KEY:
+            print('⚠️  OpenAI API key not found or langchain-openai not installed. Please update your config or set OPENAI_API_KEY environment variable.')
+            sys.exit(1)
+        return langchain_openai.ChatOpenAI(model=model_name, temperature=temperature, rate_limiter=rate_limiter)
+    elif model_name.startswith('claude'):
+        if not CONFIG.ANTHROPIC_API_KEY:
+            print('⚠️  Anthropic API key not found or langchain-anthropic not installed. Please update your config or set ANTHROPIC_API_KEY environment variable.')
+            sys.exit(1)
+        return langchain_anthropic.ChatAnthropic(model_name=model_name, temperature=temperature, timeout=30, stop=None, rate_limiter=rate_limiter)
+    elif model_name.startswith('gemini'):
+        if not CONFIG.GEMINI_API_KEY:
+            print('⚠️  Google API key not found or langchain-google-genai not installed. Please update your config or set GEMINI_API_KEY environment variable.')
+            sys.exit(1)
+        return langchain_google_genai.ChatGoogleGenerativeAI(model=model_name, temperature=temperature, rate_limiter=rate_limiter)
+    elif model_name.startswith('ollama-'):
+        # Support for Ollama models with ollama- prefix
+        actual_model_name = model_name[7:]  # Remove 'ollama-' prefix
+        try:
+            return langchain_ollama.ChatOllama(
+                model=actual_model_name,
+                temperature=temperature,
+                base_url=CONFIG.OLLAMA_BASE_URL,
+                rate_limiter=rate_limiter
+            )
+        except Exception as e:
+            print(f'⚠️  Failed to connect to Ollama at {CONFIG.OLLAMA_BASE_URL}. Make sure Ollama is running and the model "{actual_model_name}" is available.')
+            print(f'   Error: {e}')
+            sys.exit(1)
+    else:
+        raise ValueError(f"Unsupported model: {model_name}.")
 
 
 __all__ = ["CONFIG", "get_llm"]
