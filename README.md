@@ -42,17 +42,17 @@ alembic upgrade head
 python -m duksu_exec.cli --help
 ```
 
-### Create a new user
+**Create a new user**  
 ```bash
 python -m duksu_exec.cli add-user --user_id=<user id>
 ```
 
-### Create a feed associated with a user
+**Create a feed associated with a user**  
 ```bash
 python -m duksu_exec.cli create-news-feed --user_id=<user id> --query_prompt="<query prompt>"
 ```
 
-### Populate feed with curated news articles that match the user's query prompt
+**Populate feed with curated news articles that match the user's query prompt**  
 ```bash
 python -m duksu_exec.cli populate-feed --feed_id=<feed_id>
 ```
