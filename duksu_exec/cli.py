@@ -3,11 +3,11 @@ import json
 import sys
 import argparse
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any, Callable, List, Dict
 from .workflows.create_news_feed import execute_news_feed_workflow
 from .workflows.populate_feed import execute_populate_feed_workflow
 from .storage.db import get_db, get_db_session
-from .storage.model import WorkflowRunHistory, User
+from .storage.model import WorkflowRunHistory, User, NewsFeed
 from .storage.enums import WorkflowRunStatus
 
 
@@ -25,6 +25,8 @@ def setup_argparser():
     
     populate_feed_parser = subparsers.add_parser("populate-feed", help="Populate existing feed with latest articles")
     populate_feed_parser.add_argument("--feed_id", type=int, help="Feed ID to populate")
+    
+    populate_all_feeds_parser = subparsers.add_parser("populate-all-feeds", help="Populate all feeds in the database with latest articles")
     
     return parser
 
@@ -57,6 +59,74 @@ async def add_user(user_id: str) -> dict:
             "error_message": f"Failed to create user: {str(e)}",
             "user_id": user_id
         }
+
+
+async def populate_all_feeds() -> dict:
+    """Populate all feeds in the database with latest articles."""
+    # Get all feeds from database
+    db = get_db()
+    all_feeds = db.query(NewsFeed).all()
+    response = {
+        "total_feeds": 0,
+        "successful_feeds": [],
+        "failed_feeds": [],
+        "error_message": None
+    }
+        
+    if not all_feeds:
+        response["error_message"] = "No feeds found in database"
+        return response
+    
+    print(f"Found {len(all_feeds)} feeds to populate")
+    
+    successful_feeds: List[Dict[str, Any]] = []
+    failed_feeds: List[Dict[str, Any]] = []
+    
+    # Process each feed
+    for feed in all_feeds:
+        feed_id = feed.id
+        feed_info = {
+            "feed_id": feed_id,
+            "user_id": feed.user_id,
+            "feed_topic": feed.feed_topic
+        }
+        
+        try:
+            print(f"Populating feed ID {feed_id} (Topic: {feed.feed_topic[:50]}...)")
+            
+            result = await execute_populate_feed_workflow(feed.id) # type: ignore
+            
+            if result.get("error_message") is None:
+                feed_info["result"] = result
+                successful_feeds.append(feed_info)
+                print(f"✅ Successfully populated feed ID {feed_id}")
+            else:
+                feed_info["error"] = result.get("error_message")
+                failed_feeds.append(feed_info)
+                print(f"❌ Failed to populate feed ID {feed_id}: {result.get('error_message')}")
+                
+        except Exception as e:
+            feed_info["error"] = str(e)
+            failed_feeds.append(feed_info)
+            print(f"❌ Exception while populating feed ID {feed_id}: {str(e)}")
+            continue
+    
+    if successful_feeds:
+        print(f"\n✅ Successful feeds:")
+        for feed in successful_feeds:
+            print(f"  - Feed ID {feed['feed_id']}: {feed['feed_topic'][:50]}...")
+    
+    if failed_feeds:
+        print(f"\n❌ Failed feeds:")
+        for feed in failed_feeds:
+            print(f"  - Feed ID {feed['feed_id']}: {feed['feed_topic'][:50]}... - Error: {feed['error']}")
+    
+    response["total_feeds"] = len(all_feeds)
+    response["successful_feeds"] = successful_feeds
+    response["failed_feeds"] = failed_feeds
+    response["error_message"] = None if len(failed_feeds) == 0 else f"{len(failed_feeds)} feeds failed to populate"
+    
+    return response
         
 
 async def run_workflow_with_history(command_name: str, input_data: dict, workflow_func: Callable[[], Any]):
@@ -135,6 +205,15 @@ def main():
             command_name="populate-feed",
             input_data=input_data,
             workflow_func=lambda: execute_populate_feed_workflow(args.feed_id),
+        ))
+    
+    elif args.command == "populate-all-feeds":
+        input_data = {}
+        
+        asyncio.run(run_workflow_with_history(
+            command_name="populate-all-feeds",
+            input_data=input_data,
+            workflow_func=lambda: populate_all_feeds(),
         ))
     
     elif args.command == "add-user":

@@ -1,0 +1,99 @@
+name: CLI Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'CLI command to run'
+        required: true
+        type: string
+      params:
+        description: 'Command parameters as JSON array'
+        required: false
+        type: string
+        default: '[]'
+      environment:
+        description: 'Environment to run against'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  run-cli:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set environment variables
+        run: |
+          if [[ "${{ github.event.inputs.environment }}" == "production" ]]; then
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL_PRD }}" >> $GITHUB_ENV
+            echo "S3_ENDPOINT_URL=${{ vars.S3_ENDPOINT_URL_PRD }}" >> $GITHUB_ENV
+            echo "S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID_PRD }}" >> $GITHUB_ENV
+            echo "S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY_PRD }}" >> $GITHUB_ENV
+            echo "ENVIRONMENT=production" >> $GITHUB_ENV
+          else
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL_STG }}" >> $GITHUB_ENV
+            echo "S3_ENDPOINT_URL=${{ vars.S3_ENDPOINT_URL_STG }}" >> $GITHUB_ENV
+            echo "S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID_STG }}" >> $GITHUB_ENV
+            echo "S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY_STG }}" >> $GITHUB_ENV
+            echo "ENVIRONMENT=staging" >> $GITHUB_ENV
+          fi
+      
+      - name: Create .env file
+        run: |
+          echo "DATABASE_URL=${{ env.DATABASE_URL }}" > .env
+          echo "OBJECT_STORE_TYPE=s3" >> .env
+          echo "S3_BUCKET_NAME=${{ vars.S3_BUCKET_NAME }}" >> .env
+          echo "S3_REGION=${{ vars.S3_REGION }}" >> .env
+          echo "S3_ENDPOINT_URL=${{ env.S3_ENDPOINT_URL }}" >> .env
+          echo "S3_ACCESS_KEY_ID=${{ env.S3_ACCESS_KEY_ID }}" >> .env
+          echo "S3_SECRET_ACCESS_KEY=${{ env.S3_SECRET_ACCESS_KEY }}" >> .env
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install uv
+        run: |
+          curl -sSf https://install.ultraviolet.rs | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      
+      - name: Create virtual environment and install dependencies
+        run: |
+          uv venv
+          source .venv/bin/activate
+          uv sync
+      
+      - name: Parse parameters and run CLI command
+        run: |
+          source .venv/bin/activate
+          
+          # Parse parameters from JSON
+          PARAMS=$(echo '${{ github.event.inputs.params }}' | jq -r '.[]' | tr '\n' ' ')
+          
+          # Build and execute command
+          CMD="python -m duksu_exec.cli ${{ github.event.inputs.command }}"
+          if [[ -n "$PARAMS" ]]; then
+            CMD="$CMD $PARAMS"
+          fi
+          
+          echo "Executing: $CMD"
+          eval $CMD
+      
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "✅ CLI command '${{ github.event.inputs.command }}' completed successfully in ${{ env.ENVIRONMENT }} environment"
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ CLI command '${{ github.event.inputs.command }}' failed in ${{ env.ENVIRONMENT }} environment"
+          exit 1 
