@@ -23,26 +23,23 @@ jobs:
   migrate:
     runs-on: ubuntu-latest
     
-    strategy:
-      matrix:
-        include:
-          - branch: main
-            environment: production
-            database_url_secret: DATABASE_URL_PRD
-          - branch: develop
-            environment: staging
-            database_url_secret: DATABASE_URL_STG
-    
-    # Only run if the current branch matches the matrix branch, or if manually triggered
-    if: |
-      (github.ref == format('refs/heads/{0}', matrix.branch)) ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == matrix.environment)
-    
-    environment: ${{ matrix.environment }}
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Set environment variables
+        id: env
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ github.event.inputs.environment }}" == "production" ]]; then
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL_PRD }}" >> $GITHUB_ENV
+            echo "ENVIRONMENT=production" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]] || [[ "${{ github.event.inputs.environment }}" == "staging" ]]; then
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL_STG }}" >> $GITHUB_ENV
+            echo "ENVIRONMENT=staging" >> $GITHUB_ENV
+          else
+            echo "❌ No matching environment found"
+            exit 1
+          fi
       
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -61,15 +58,11 @@ jobs:
           uv sync
       
       - name: Run database migrations
-        env:
-          DATABASE_URL: ${{ secrets[matrix.database_url_secret] }}
         run: |
           source .venv/bin/activate
           alembic upgrade head
       
       - name: Verify migration status
-        env:
-          DATABASE_URL: ${{ secrets[matrix.database_url_secret] }}
         run: |
           source .venv/bin/activate
           alembic current
@@ -77,10 +70,10 @@ jobs:
       - name: Notify on success
         if: success()
         run: |
-          echo "✅ Database migration completed successfully for ${{ matrix.environment }} environment"
+          echo "✅ Database migration completed successfully for ${{ env.ENVIRONMENT }} environment"
       
       - name: Notify on failure
         if: failure()
         run: |
-          echo "❌ Database migration failed for ${{ matrix.environment }} environment"
+          echo "❌ Database migration failed for ${{ env.ENVIRONMENT }} environment"
           exit 1 
