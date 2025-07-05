@@ -24,6 +24,7 @@ target_metadata = None
 
 # Override the sqlalchemy.url from alembic.ini with environment variable or config
 database_url = CONFIG.DATABASE_URL
+print(database_url)
 if database_url:
     config.set_main_option("sqlalchemy.url", database_url)
 

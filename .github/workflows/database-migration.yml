@@ -1,0 +1,86 @@
+name: Alembic
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'alembic/**'
+      - 'alembic.ini'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        include:
+          - branch: main
+            environment: production
+            database_url_secret: DATABASE_URL_PRD
+          - branch: develop
+            environment: staging
+            database_url_secret: DATABASE_URL_STG
+    
+    # Only run if the current branch matches the matrix branch, or if manually triggered
+    if: |
+      (github.ref == format('refs/heads/{0}', matrix.branch)) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == matrix.environment)
+    
+    environment: ${{ matrix.environment }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install uv
+        run: |
+          curl -sSf https://install.ultraviolet.rs | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      
+      - name: Create virtual environment and install dependencies
+        run: |
+          uv venv
+          source .venv/bin/activate
+          uv sync
+      
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets[matrix.database_url_secret] }}
+        run: |
+          source .venv/bin/activate
+          alembic upgrade head
+      
+      - name: Verify migration status
+        env:
+          DATABASE_URL: ${{ secrets[matrix.database_url_secret] }}
+        run: |
+          source .venv/bin/activate
+          alembic current
+      
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "✅ Database migration completed successfully for ${{ matrix.environment }} environment"
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Database migration failed for ${{ matrix.environment }} environment"
+          exit 1 
