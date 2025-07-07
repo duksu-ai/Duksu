@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import UUID
 
 
 # revision identifiers, used by Alembic.
@@ -23,14 +24,14 @@ def upgrade() -> None:
     # Create users table
     op.create_table(
         'users',
-        sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.String(255), nullable=False),
+        sa.Column('auth_id', UUID(as_uuid=True), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
         sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-        sa.PrimaryKeyConstraint('id')
+        sa.PrimaryKeyConstraint('user_id')
     )
-    op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
-    op.create_index(op.f('ix_users_user_id'), 'users', ['user_id'], unique=True)
+    op.create_index(op.f('ix_users_user_id'), 'users', ['user_id'], unique=False)
+    op.create_index(op.f('ix_users_auth_id'), 'users', ['auth_id'], unique=True)
     
     # Add foreign key constraint to news_feeds table
     op.create_foreign_key(
@@ -49,5 +50,5 @@ def downgrade() -> None:
     
     # Drop users table
     op.drop_index(op.f('ix_users_user_id'), table_name='users')
-    op.drop_index(op.f('ix_users_id'), table_name='users')
+    op.drop_index(op.f('ix_users_auth_id'), table_name='users')
     op.drop_table('users')

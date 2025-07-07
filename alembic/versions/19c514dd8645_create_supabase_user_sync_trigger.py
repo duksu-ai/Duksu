@@ -26,9 +26,17 @@ def upgrade() -> None:
         RETURNS TRIGGER AS $$
         BEGIN
             -- Insert into public.users table when a new user is created in auth.users
-            INSERT INTO public.users (user_id, created_at, updated_at)
-            VALUES (NEW.id::text, NEW.created_at, NEW.updated_at)
-            ON CONFLICT (user_id) DO NOTHING;
+            -- Use the auth user's id as auth_id and email as user_id (or id as fallback)
+            INSERT INTO public.users (user_id, auth_id, created_at, updated_at)
+            VALUES (
+                COALESCE(NEW.email, NEW.id::text), 
+                NEW.id, 
+                NEW.created_at, 
+                NEW.updated_at
+            )
+            ON CONFLICT (user_id) DO UPDATE SET
+                auth_id = EXCLUDED.auth_id,
+                updated_at = EXCLUDED.updated_at;
             
             RETURN NEW;
         END;
@@ -42,7 +50,7 @@ def upgrade() -> None:
         BEGIN
             -- Delete the corresponding record in public.users when auth.users is deleted
             DELETE FROM public.users
-            WHERE user_id = OLD.id::text;
+            WHERE auth_id = OLD.id;
             
             RETURN OLD;
         END;
@@ -68,8 +76,7 @@ def upgrade() -> None:
     # Grant necessary permissions for the trigger functions
     op.execute("""
         GRANT USAGE ON SCHEMA public TO supabase_auth_admin;
-        GRANT INSERT, DELETE ON public.users TO supabase_auth_admin;
-        GRANT USAGE, SELECT ON SEQUENCE users_id_seq TO supabase_auth_admin;
+        GRANT INSERT, UPDATE, DELETE ON public.users TO supabase_auth_admin;
     """)
 
 
@@ -84,6 +91,5 @@ def downgrade() -> None:
     op.execute("DROP FUNCTION IF EXISTS handle_user_delete();")
     
     # Revoke permissions
-    op.execute("REVOKE INSERT, DELETE ON public.users FROM supabase_auth_admin;")
-    op.execute("REVOKE USAGE, SELECT ON SEQUENCE users_id_seq FROM supabase_auth_admin;")
+    op.execute("REVOKE INSERT, UPDATE, DELETE ON public.users FROM supabase_auth_admin;")
     op.execute("REVOKE USAGE ON SCHEMA public FROM supabase_auth_admin;")

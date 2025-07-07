@@ -2,6 +2,8 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, Enum as SQLEnum,
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
 from .enums import WorkflowRunStatus
 
 Base = declarative_base()
@@ -11,8 +13,8 @@ class User(Base):
     """Model for storing users."""
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String(255), nullable=False, unique=True, index=True)  # External user identifier
+    user_id = Column(String(255), primary_key=True, index=True)
+    auth_id = Column(UUID(as_uuid=True), nullable=True, unique=True, index=True)  # For Supabase auth integration
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
