@@ -10,15 +10,8 @@ from duksu.logging_config import create_logger
 from duksu.agent.prompts import AIPrompt, SystemPrompt
 
 
-class FeedTopicGeneration(BaseModel):
-    feed_name: str = Field(
-        description="A concise, one-sentence topic name that represents the feed based on the query prompt"
-    )
-
-
 class CurationResult(BaseModel):
     selected_articles: List[str] = Field(description="URLs of articles selected for the feed")
-    feed_name: str = Field(description="Generated topic name for the feed")
     curation_summary: str = Field(description="Summary of the curation process and rationale")
 
 
@@ -29,46 +22,15 @@ class FeedCurator:
     
     def __init__(self, llm: BaseLanguageModel, system_prompt: Optional[SystemPrompt] = None):
         self.llm = llm
-        self.topic_generator = llm.with_structured_output(FeedTopicGeneration)
         self.curator = llm.with_structured_output(CurationResult)
         self.system_prompt = system_prompt or SystemPrompt()
         self.logger = create_logger("FeedCurator")
         
         # Initialize the Scorers
         self.relevancy_scorer = RelevancyScorer(llm, system_prompt)
-
-    async def generate_feed_name(self, query_prompt: str) -> str:
-        """Generate a concise feed topic from the query prompt."""
-        try:
-            prompt = AIPrompt(self.system_prompt)
-            prompt.add_task_prompt(f"""
-Generate a concise, one-sentence topic name for a news feed based on the following query prompt.
-The topic should be descriptive, professional, and capture the essence of what the user is looking for.
-
-Query Prompt: {query_prompt}
-
-Examples:
-- Query: "What are recent developments in AI and machine learning?" 
-  Topic: "Recent AI and Machine Learning Developments"
-- Query: "Show me news about climate change impacts on agriculture in developing countries"
-  Topic: "Climate Change Impact on Agriculture in Developing Nations"
-""")
-            
-            result = await self.topic_generator.ainvoke(prompt.get_prompt())
-            
-            if isinstance(result, FeedTopicGeneration):
-                return result.feed_name
-            else:
-                raise ValueError(f"Unexpected topic generation response: {type(result)}")
-                
-        except Exception as e:
-            self.logger.error(f"Error generating feed topic: {e}")
-            # Fallback to a simple topic generation
-            return f"News Feed: {query_prompt[:50]}..."
     
     async def curate_news_feed(
         self,
-        feed_name: str,
         query_prompt: str,
         articles: List[NewsArticle],
         min_relevance_score: float,
@@ -101,7 +63,6 @@ Examples:
                 self.logger.warning("No articles met the minimum relevance criteria")
                 return NewsCuration(
                     query_prompt=query_prompt,
-                    feed_name=feed_name,
                     items=[]
                 )
 
@@ -122,7 +83,6 @@ Examples:
             
             return NewsCuration(
                 query_prompt=query_prompt,
-                feed_name=feed_name,
                 items=curation_items
             )
             

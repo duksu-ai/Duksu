@@ -45,7 +45,6 @@ async def execute_populate_feed_workflow(feed_id: int):
         # Get search plans first
         initial_state: PopulateFeedState = {
             "feed_id": getattr(feed, "id"),
-            "feed_name": getattr(feed, "feed_name"),
             "feed_query_prompt": getattr(feed, "query_prompt"),
             "news_search_plans": [],
             "articles_to_retrieve": [],
@@ -57,7 +56,6 @@ async def execute_populate_feed_workflow(feed_id: int):
         result = await create_populate_feed_workflow().ainvoke(initial_state)
         return {
             "feed_id": feed.id,
-            "feed_name": feed.feed_name,
             "feed_query_prompt": feed.query_prompt,
             "news_search_plans": result["news_search_plans"],
             "articles_retrieved": len(result["articles_retrieved"]),

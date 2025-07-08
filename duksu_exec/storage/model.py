@@ -42,7 +42,6 @@ class NewsFeed(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String(255), ForeignKey("users.user_id"), nullable=False, index=True)
     query_prompt = Column(Text, nullable=False)
-    feed_name = Column(String(500), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

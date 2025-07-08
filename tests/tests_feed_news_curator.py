@@ -16,7 +16,6 @@ class TestFeedCurator:
         """Helper function to transform Feed object to output format for saving."""
         return {
             "query_prompt": feed.query_prompt,
-            "feed_name": feed.feed_name,
             "items_count": len(feed.items),
             "items": [
                 {
@@ -89,7 +88,6 @@ class TestFeedCurator:
         
         assert isinstance(curated_feed, Feed)
         assert curated_feed.query_prompt == query_prompt
-        assert curated_feed.feed_name is not None and curated_feed.feed_name.strip() != ""
         
         # Verify AI-related articles are prioritized
         ai_keywords = ["AI", "artificial intelligence", "machine learning", "OpenAI", "GPT"]
