@@ -66,6 +66,7 @@ class NewsArticleReader:
             raise ArticleContentNotAccessibleError(f"Article content is not accessible: {article_content.is_content_sufficient_reasoning}")
 
         news_article.summary = article_content.summary
+        news_article.summary_short = article_content.summary_short
         news_article.author = article_content.author if article_content.author and article_content.author != "None" else None
         news_article.keywords = article_content.keywords[:CONFIG.ARTICLE_KEYWORDS_MAX_COUNT]
         news_article.thumbnail_url = article.top_image if article.top_image else None
