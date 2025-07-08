@@ -87,7 +87,7 @@ async def populate_all_feeds() -> dict:
         feed_id = feed.id
         feed_info = {
             "feed_id": feed_id,
-            "user_id": feed.user_id,
+            "feed_query_prompt": feed.query_prompt,
         }
         
         try:

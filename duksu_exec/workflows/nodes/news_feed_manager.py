@@ -39,8 +39,8 @@ async def _read_articles(article_reader: NewsArticleReader, articles: List[NewsA
 
                 await Storage.store_news_article(hydrated_article)
                 processed_articles.append(hydrated_article)
-            except ArticleContentNotAccessibleError:
-                log(f"Article content is not accessible, skipping...")
+            except ArticleContentNotAccessibleError as e:
+                log(f"Skipping article as content is not accessible: {e}")
                 continue
     
     return processed_articles

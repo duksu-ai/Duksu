@@ -124,7 +124,7 @@ async def fetch_google_news_rss(url: str) -> List[NewsArticle]:
             )
             articles.append(article)
         
-        logger.info(f"Successfully fetched {len(articles)} articles from news source url: {url}")
+        logger.info(f"Successfully retrieved {len(articles)} articles from news source url: {url}")
         return articles
         
     except Exception as e:
