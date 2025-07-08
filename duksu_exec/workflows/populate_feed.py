@@ -32,7 +32,6 @@ def create_populate_feed_workflow():
     workflow.add_edge("curate_articles", END)
     
     workflow.set_entry_point("create_search_plans")
-
     return workflow.compile()
 
 
@@ -62,7 +61,7 @@ async def execute_populate_feed_workflow(feed_id: int):
             "feed_query_prompt": feed.query_prompt,
             "news_search_plans": result["news_search_plans"],
             "articles_retrieved": len(result["articles_retrieved"]),
-            "articles_curated": [f"{a.title[:100]}..." for a in result["articles_curated"]],
+            "articles_curated": len(result["articles_curated"]),
             "error_message": result["error_message"]
         }
             

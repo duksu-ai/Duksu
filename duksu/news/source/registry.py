@@ -149,10 +149,6 @@ class NewsSourceRegistry:
                 if article.published_at >= cutoff_timestamp
             ]
             
-            filtered_count = len(articles) - len(filtered_articles)
-            if filtered_count > 0:
-                cls.logger.info(f"Filtered out {filtered_count} articles older than {age_cap}")
-            
             return filtered_articles
             
         except ValueError as e:
