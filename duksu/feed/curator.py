@@ -11,14 +11,14 @@ from duksu.agent.prompts import AIPrompt, SystemPrompt
 
 
 class FeedTopicGeneration(BaseModel):
-    feed_topic: str = Field(
+    feed_name: str = Field(
         description="A concise, one-sentence topic name that represents the feed based on the query prompt"
     )
 
 
 class CurationResult(BaseModel):
     selected_articles: List[str] = Field(description="URLs of articles selected for the feed")
-    feed_topic: str = Field(description="Generated topic name for the feed")
+    feed_name: str = Field(description="Generated topic name for the feed")
     curation_summary: str = Field(description="Summary of the curation process and rationale")
 
 
@@ -37,7 +37,7 @@ class FeedCurator:
         # Initialize the Scorers
         self.relevancy_scorer = RelevancyScorer(llm, system_prompt)
 
-    async def generate_feed_topic(self, query_prompt: str) -> str:
+    async def generate_feed_name(self, query_prompt: str) -> str:
         """Generate a concise feed topic from the query prompt."""
         try:
             prompt = AIPrompt(self.system_prompt)
@@ -57,7 +57,7 @@ Examples:
             result = await self.topic_generator.ainvoke(prompt.get_prompt())
             
             if isinstance(result, FeedTopicGeneration):
-                return result.feed_topic
+                return result.feed_name
             else:
                 raise ValueError(f"Unexpected topic generation response: {type(result)}")
                 
@@ -68,7 +68,7 @@ Examples:
     
     async def curate_news_feed(
         self,
-        feed_topic: str,
+        feed_name: str,
         query_prompt: str,
         articles: List[NewsArticle],
         min_relevance_score: float,
@@ -101,7 +101,7 @@ Examples:
                 self.logger.warning("No articles met the minimum relevance criteria")
                 return NewsCuration(
                     query_prompt=query_prompt,
-                    feed_topic=feed_topic,
+                    feed_name=feed_name,
                     items=[]
                 )
 
@@ -122,7 +122,7 @@ Examples:
             
             return NewsCuration(
                 query_prompt=query_prompt,
-                feed_topic=feed_topic,
+                feed_name=feed_name,
                 items=curation_items
             )
             

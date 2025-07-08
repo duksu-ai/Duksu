@@ -64,18 +64,18 @@ async def create_feed_node(state: CreateNewsFeedState):
             return state
             
         curator = FeedCurator(llm=get_llm())
-        feed_topic = await curator.generate_feed_topic(state["query_prompt"])
+        feed_name = await curator.generate_feed_name(state["query_prompt"])
 
         # Create the news feed
         news_feed = NewsFeed(
             user_id=state["user_id"],
             query_prompt=state["query_prompt"],
-            feed_topic=feed_topic,
+            feed_name=feed_name,
         )
         db.add(news_feed)
         db.flush()  # Get the ID
 
-        return { "feed_id": news_feed.id, "feed_topic": feed_topic }
+        return { "feed_id": news_feed.id, "feed_name": feed_name }
             
     except Exception as e:
         state["error_message"] = str(e)
@@ -174,7 +174,7 @@ async def curate_and_store_articles_node(state: PopulateFeedState) -> PopulateFe
         # Curate articles using FeedCurator
         curator = FeedCurator(llm=get_llm())
         curated_feed = await curator.curate_news_feed(
-            feed_topic=str(feed.feed_topic),
+            feed_name=str(feed.feed_name),
             query_prompt=str(feed.query_prompt),
             articles=articles_to_curate,
             max_articles_per_batch=20,

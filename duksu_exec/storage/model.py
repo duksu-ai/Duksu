@@ -42,7 +42,7 @@ class NewsFeed(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String(255), ForeignKey("users.user_id"), nullable=False, index=True)
     query_prompt = Column(Text, nullable=False)
-    feed_topic = Column(String(500), nullable=False)
+    feed_name = Column(String(500), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -80,6 +80,7 @@ class NewsArticle(Base):
     content_markdown_path = Column(Text, nullable=True)  # Path to saved markdown content file
     thumbnail_url = Column(Text, nullable=True)
     summary = Column(Text, nullable=True)
+    summary_short = Column(Text, nullable=True)
     keywords = Column(Text, nullable=True)  # JSON string of keywords list
     author = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

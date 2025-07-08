@@ -87,6 +87,7 @@ class Storage:
             content_markdown_path=markdown_path,
             thumbnail_url=article.thumbnail_url,
             summary=article.summary,
+            summary_short=article.summary_short,
             keywords=json.dumps(article.keywords) if article.keywords else None,
             author=article.author
         )
@@ -113,6 +114,7 @@ class Storage:
             published_at=getattr(db_article, 'published_at', 0),
             source=getattr(db_article, 'source', ''),
             summary=getattr(db_article, 'summary', None),
+            summary_short=getattr(db_article, 'summary_short', None),
             keywords=json.loads(keywords_json) if keywords_json else None,
             author=getattr(db_article, 'author', None)
         )

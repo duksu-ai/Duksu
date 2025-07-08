@@ -16,5 +16,5 @@ class NewsCurationItem:
 class NewsCuration:
     """Curated news feed with a query prompt and a list of scored items."""
     query_prompt: str
-    feed_topic: str
+    feed_name: str
     items: List[NewsCurationItem] = field(default_factory=list)

@@ -18,6 +18,7 @@ class ArticleContentNotAccessibleError(Exception):
 
 class ArticleContentExtraction(BaseModel):
     summary: str = Field(default="", description=f"A concise summary of the article between minimum {CONFIG.ARTICLE_SUMMARY_MIN_WORD_COUNT} and maximum {CONFIG.ARTICLE_SUMMARY_MAX_WORD_COUNT} words.")
+    summary_short: str = Field(default="", description=f"A shorter summary (1–2 sentences) highlighting the key point of the article to attract user interest at a glance.")
     author: str = Field(default="", description="The author name if mentioned in the text, otherwise None")
     keywords: List[str] = Field(default=[], description=f"{CONFIG.ARTICLE_KEYWORDS_MIN_COUNT}-{CONFIG.ARTICLE_KEYWORDS_MAX_COUNT} relevant keywords/tags for the article")
     is_content_sufficient: bool = Field(description="True if the article content is sufficient to provide a summary, False if content is behind subscription barrier, paywall, or otherwise inaccessible")

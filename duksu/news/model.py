@@ -15,6 +15,7 @@ class NewsArticle:
     content: Optional[str] = None
     thumbnail_url: Optional[str] = None
     summary: Optional[str] = None
+    summary_short: Optional[str] = None
     keywords: Optional[List[str]] = None
     author: Optional[str] = None
 

@@ -16,7 +16,7 @@ class TestFeedCurator:
         """Helper function to transform Feed object to output format for saving."""
         return {
             "query_prompt": feed.query_prompt,
-            "feed_topic": feed.feed_topic,
+            "feed_name": feed.feed_name,
             "items_count": len(feed.items),
             "items": [
                 {
@@ -89,7 +89,7 @@ class TestFeedCurator:
         
         assert isinstance(curated_feed, Feed)
         assert curated_feed.query_prompt == query_prompt
-        assert curated_feed.feed_topic is not None and curated_feed.feed_topic.strip() != ""
+        assert curated_feed.feed_name is not None and curated_feed.feed_name.strip() != ""
         
         # Verify AI-related articles are prioritized
         ai_keywords = ["AI", "artificial intelligence", "machine learning", "OpenAI", "GPT"]
@@ -112,7 +112,7 @@ class TestFeedCurator:
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(feed_data, f, indent=2, ensure_ascii=False)
         
-        print(f"✓ Successfully curated AI feed: '{curated_feed.feed_topic}'")
+        print(f"✓ Successfully curated AI feed: '{curated_feed.feed_name}'")
         print(f"✓ Output saved to: {output_file}")
     
     @pytest.mark.asyncio
@@ -132,7 +132,7 @@ class TestFeedCurator:
         # Verify feed structure
         assert isinstance(curated_feed, Feed)
         assert curated_feed.query_prompt == query_prompt
-        assert curated_feed.feed_topic is not None
+        assert curated_feed.feed_name is not None
         
         # Verify sports-related articles are selected
         sports_keywords = ["soccer", "football", "basketball", "NBA", "MLS", "championship", "finals"]
@@ -155,6 +155,6 @@ class TestFeedCurator:
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(feed_data, f, indent=2, ensure_ascii=False)
         
-        print(f"✓ Successfully curated sports feed: '{curated_feed.feed_topic}'")
+        print(f"✓ Successfully curated sports feed: '{curated_feed.feed_name}'")
         print(f"✓ Output saved to: {output_file}")
     

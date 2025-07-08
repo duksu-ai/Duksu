@@ -33,6 +33,7 @@ def upgrade() -> None:
         sa.Column('content_markdown_path', sa.Text(), nullable=True),
         sa.Column('thumbnail_url', sa.Text(), nullable=True),
         sa.Column('summary', sa.Text(), nullable=True),
+        sa.Column('summary_short', sa.Text(), nullable=True),
         sa.Column('keywords', sa.Text(), nullable=True),
         sa.Column('author', sa.String(255), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
@@ -49,7 +50,7 @@ def upgrade() -> None:
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.String(255), nullable=False),
         sa.Column('query_prompt', sa.Text(), nullable=False),
-        sa.Column('feed_topic', sa.String(500), nullable=False),
+        sa.Column('feed_name', sa.String(500), nullable=False),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
         sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
         sa.PrimaryKeyConstraint('id')

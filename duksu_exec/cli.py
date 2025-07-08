@@ -88,11 +88,11 @@ async def populate_all_feeds() -> dict:
         feed_info = {
             "feed_id": feed_id,
             "user_id": feed.user_id,
-            "feed_topic": feed.feed_topic
+            "feed_name": feed.feed_name
         }
         
         try:
-            print(f"Populating feed ID {feed_id} (Topic: {feed.feed_topic[:50]}...)")
+            print(f"Populating feed ID {feed_id} (Topic: {feed.feed_name[:50]}...)")
             
             result = await execute_populate_feed_workflow(feed.id) # type: ignore
             
@@ -114,12 +114,12 @@ async def populate_all_feeds() -> dict:
     if successful_feeds:
         print(f"\n✅ Successful feeds:")
         for feed in successful_feeds:
-            print(f"  - Feed ID {feed['feed_id']}: {feed['feed_topic'][:50]}...")
+            print(f"  - Feed ID {feed['feed_id']}: {feed['feed_name'][:50]}...")
     
     if failed_feeds:
         print(f"\n❌ Failed feeds:")
         for feed in failed_feeds:
-            print(f"  - Feed ID {feed['feed_id']}: {feed['feed_topic'][:50]}... - Error: {feed['error']}")
+            print(f"  - Feed ID {feed['feed_id']}: {feed['feed_name'][:50]}... - Error: {feed['error']}")
     
     response["total_feeds"] = len(all_feeds)
     response["successful_feeds"] = successful_feeds

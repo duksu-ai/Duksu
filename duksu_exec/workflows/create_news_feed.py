@@ -26,7 +26,7 @@ async def execute_news_feed_workflow(user_id: str, query_prompt: str):
             "user_id": user_id,
             "query_prompt": query_prompt,
             "feed_id": None,
-            "feed_topic": None,
+            "feed_name": None,
             "error_message": None
         }
         
