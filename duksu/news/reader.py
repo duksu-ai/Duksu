@@ -132,32 +132,10 @@ class NewsArticleReader:
         return text
     
     async def _extract_article_content(self, title: str, text: str, source: str) -> ArticleContentExtraction:
-        max_tokens = CONFIG.ARTICLE_PARSER_CONTENT_MAX_TOKEN_LENGTH
         content_tokens = count_tokens(text)
         
-        if content_tokens > max_tokens:
-            self.logger.info(f"Article content ({content_tokens} tokens) exceeds max token limit ({max_tokens}). Truncating.")
-            text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=max_tokens * 3,
-                chunk_overlap=100,
-                length_function=len,
-                is_separator_regex=False,
-            )
-            chunks = text_splitter.split_text(text)
-            
-            truncated_text = ""
-            current_tokens = 0
-            
-            for chunk in chunks:
-                chunk_tokens = count_tokens(chunk)
-                if current_tokens + chunk_tokens <= max_tokens:
-                    truncated_text += chunk + "\n\n"
-                    current_tokens += chunk_tokens
-                else:
-                    break
-            
-            text = truncated_text.strip()
-            self.logger.info(f"Truncated content to {count_tokens(text)} tokens")
+        if content_tokens < 1000:
+            raise ArticleContentNotAccessibleError(f"Article content is not sufficient: only {content_tokens} tokens (minimum 1000 required)")
         
         prompt = AIPrompt(self.system_prompt)
         prompt.add_task_prompt(f"""

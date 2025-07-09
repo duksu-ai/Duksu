@@ -2,13 +2,13 @@ import asyncio
 import json
 import sys
 import argparse
-from datetime import datetime
-from typing import Any, Callable, List, Dict
+from typing import Any, List, Dict
+
+from duksu_exec.controller import run_workflow_with_history
 from .workflows.create_news_feed import execute_news_feed_workflow
 from .workflows.populate_feed import execute_populate_feed_workflow
 from .storage.db import get_db, get_db_session
-from .storage.model import WorkflowRunHistory, User, NewsFeed
-from .storage.enums import WorkflowRunStatus
+from .storage.model import User, NewsFeed
 
 
 def setup_argparser():
@@ -126,57 +126,6 @@ async def populate_all_feeds() -> dict:
     response["error_message"] = None if len(failed_feeds) == 0 else f"{len(failed_feeds)} feeds failed to populate"
     
     return response
-        
-
-async def run_workflow_with_history(command_name: str, input_data: dict, workflow_func: Callable[[], Any]):
-    run_id = None
-    try:
-        with get_db_session() as session:
-            workflow_run = WorkflowRunHistory(
-                workflow_name=command_name,
-                input_data=json.dumps(input_data),
-                status=WorkflowRunStatus.STARTED
-            )
-            session.add(workflow_run)
-            session.flush()  # Get the ID
-            run_id = workflow_run.id
-        
-            print(f"Started workflow run ID: {run_id}")
- 
-            result = await workflow_func()
-            run_status = WorkflowRunStatus.COMPLETED if result.get("error_message") is None else WorkflowRunStatus.FAILED
-     
-            workflow_run = session.query(WorkflowRunHistory).filter(
-                WorkflowRunHistory.id == run_id
-            ).first()
-            if workflow_run:
-                workflow_run.status = run_status # type: ignore
-                workflow_run.output_data = json.dumps(result, default=str) # type: ignore
-                workflow_run.completed_at = datetime.now() # type: ignore
-        
-            print("Workflow result:")
-            print(json.dumps(result, indent=2, default=str))
-            print(f"Workflow completed with status: {run_status.value}")
-
-            return result
-                
-    except Exception as e:
-        # Update workflow run history with error status
-        print(f"❌ Unexpected error: {e}")
-        if run_id is not None:
-            try:
-                with get_db_session() as session:
-                    workflow_run = session.query(WorkflowRunHistory).filter(
-                        WorkflowRunHistory.id == run_id
-                    ).first()
-                    if workflow_run:
-                        workflow_run.status = WorkflowRunStatus.ERROR # type: ignore
-                        workflow_run.output_data = json.dumps({"error_message": str(e)}, default=str) # type: ignore
-                        workflow_run.completed_at = datetime.now() # type: ignore
-            except Exception as db_error:
-                print(f"❌ Failed to update workflow history: {db_error}")
-        
-        sys.exit(1)
 
 
 def main():

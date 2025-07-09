@@ -1,11 +1,11 @@
 import asyncio
-from typing import List, Optional, Dict, Any, Tuple
+from typing import List, Literal, Optional, Dict, Any, Tuple
 from langchain.schema.language_model import BaseLanguageModel
 from pydantic import BaseModel, Field
 
+from duksu.feed.scorer import RelevanceScorer, Score
 from duksu.news.model import NewsArticle
 from duksu.feed.model import NewsCuration, NewsCurationItem
-from duksu.feed.scorer import RelevancyScorer
 from duksu.logging_config import create_logger
 from duksu.agent.prompts import AIPrompt, SystemPrompt
 
@@ -27,8 +27,11 @@ class FeedCurator:
         self.logger = create_logger("FeedCurator")
         
         # Initialize the Scorers
-        self.relevancy_scorer = RelevancyScorer(llm, system_prompt)
+        self.relevancy_scorer = RelevanceScorer(llm, system_prompt)
     
+    def _filter_by_score(self, articles_with_scores: List[Tuple[NewsArticle, Score]], min_score: float) -> List[Tuple[NewsArticle, Score]]:
+        return [article_with_score for article_with_score in articles_with_scores if article_with_score[1].score >= min_score]
+
     async def curate_news_feed(
         self,
         query_prompt: str,
@@ -42,19 +45,22 @@ class FeedCurator:
         assert query_prompt.strip() != ""
 
         self.logger.info(f"Starting news curation job; query_prompt: \"{query_prompt[:100]}\"; considering {len(articles)} articles; articles per batch: {max_articles_per_batch}")
-        
+
         try:
-            relevant_articles = []
+            relevant_articles: List[Tuple[NewsArticle, Score]] = []
             articles_batches = [articles] if max_articles_per_batch is None else [articles[i:i + max_articles_per_batch] for i in range(0, len(articles), max_articles_per_batch)]
 
             count = 0
             for batch in articles_batches:
                 count += 1
                 self.logger.debug(f"Scoring batch ({count}/{len(articles_batches)}) of {len(batch)} articles")
+                
+                scorer_response = self.relevancy_scorer.score_articles(batch, query_prompt)
+                articles_with_scores = list(zip(batch, scorer_response.scores))
 
-                relevant_articles_in_batch = await self.relevancy_scorer.filter_by_relevance_score(
-                    batch, query_prompt, min_relevance_score
-                )
+                # Filtering by score criteria
+                relevant_articles_in_batch = self._filter_by_score(articles_with_scores, min_relevance_score)
+
                 self.logger.debug(f"Found {len(relevant_articles_in_batch)} relevant articles in batch")
 
                 relevant_articles.extend(relevant_articles_in_batch)
@@ -67,7 +73,7 @@ class FeedCurator:
                 )
 
             # Sort articles by relevance score in descending order
-            relevant_articles.sort(key=lambda x: x[1].relevance_score, reverse=True)
+            relevant_articles.sort(key=lambda x: x[1].score, reverse=True)
             
             curation_items = []
             for article, relevance_score in relevant_articles:
@@ -75,7 +81,7 @@ class FeedCurator:
                     item=article,
                     scores={
                         "relevance": {
-                            "score": relevance_score.relevance_score,
+                            "score": relevance_score.score,
                             "reasoning": relevance_score.reasoning
                         }
                     }

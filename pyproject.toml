@@ -36,6 +36,7 @@ dependencies = [
     "alembic",
     "psycopg2-binary",
     "boto3",
+    "pathvalidate",
 ]
 
 [tool.black]

@@ -1,3 +1,4 @@
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -27,6 +28,19 @@ database_url = CONFIG.DATABASE_URL
 print(database_url)
 if database_url:
     config.set_main_option("sqlalchemy.url", database_url)
+
+# Configure version locations based on environment
+# - Development: Only runs migrations from alembic/versions/
+# - Production/Staging: Runs migrations from both alembic/versions/ and alembic/versions/prod/
+environment = os.getenv("ENVIRONMENT", "").lower()
+if environment in ["production", "staging"]:
+    # Include both main versions directory and prod directory
+    version_locations = "alembic/versions:alembic/versions/prod"
+    config.set_main_option("version_locations", version_locations)
+    print(f"Environment: {environment} - Using version locations: {version_locations}")
+else:
+    # Use only the main versions directory
+    print("Environment: development - Using default version location: alembic/versions")
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

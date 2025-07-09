@@ -3,7 +3,7 @@ import json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from contextlib import contextmanager
-from typing import Generator, Dict, Optional
+from typing import Any, Generator, Dict, Optional
 
 from duksu.news.model import NewsArticle
 from duksu_exec.storage.objectstore import ObjectStore
@@ -73,9 +73,9 @@ class Storage:
         markdown_path = None
 
         if article.raw_html:
-            html_path = await object_store.save_html(article.raw_html, article.url, filename=article.title)
+            html_path = await object_store.save_html(article.raw_html, filename=article.title, metadata={"article_url": article.url})
         if article.content:
-            markdown_path = await object_store.save_markdown(article.content, article.url, filename=article.title)
+            markdown_path = await object_store.save_markdown(article.content, filename=article.title, metadata={"article_url": article.url})
 
         # Create new article record
         db_article = DBNewsArticle(
@@ -118,3 +118,10 @@ class Storage:
             keywords=json.loads(keywords_json) if keywords_json else None,
             author=getattr(db_article, 'author', None)
         )
+
+    @classmethod
+    async def store_curation_result(cls, content: Dict[str, Any]) -> None:
+        object_store = ObjectStore(prefix=datetime.now().strftime("%Y-%m-%d"))
+        stored_filename = f"curation-{object_store.generate_unique_filename(json.dumps(content), "json")}"
+        
+        await object_store.save_json(content, filename=stored_filename)

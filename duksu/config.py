@@ -65,10 +65,6 @@ class Config:
     def ARTICLE_SUMMARY_MAX_WORD_COUNT(self) -> int:
         return int(os.getenv('ARTICLE_SUMMARY_MAX_WORD_COUNT', '200'))
 
-    @property
-    def ARTICLE_PARSER_CONTENT_MAX_TOKEN_LENGTH(self) -> int:
-        return int(os.getenv('ARTICLE_PARSER_CONTENT_MAX_TOKEN_LENGTH', '100000'))
-
 
 CONFIG = Config()
 

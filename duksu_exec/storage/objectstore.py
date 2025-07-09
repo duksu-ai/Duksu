@@ -1,10 +1,12 @@
+import json
 import os
 import hashlib
 import asyncio
 import boto3
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 from abc import ABC, abstractmethod
+from pathvalidate import sanitize_filename
 from ..config import CONFIG
 
 
@@ -182,18 +184,27 @@ class ObjectStore:
         else:
             raise ValueError(f"Unsupported object store type: {store_type}")
     
-    def _generate_filename(self, content: str, extension: str) -> str:
+    def sanitize_filename(self, filename: str) -> str:
+        """Sanitize filename to be safe for file systems and S3 keys."""
+        sanitized = sanitize_filename(filename, replacement_text="_")
+        sanitized = sanitized.replace(' ', '_')
+        if len(sanitized) > 200:
+            sanitized = sanitized[:200]
+        return sanitized.strip('_')
+
+    def generate_unique_filename(self, content: str, extension: str) -> str:
         """Generate a unique filename based on content hash."""
         content_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
         return f"{content_hash}.{extension}"
     
-    async def save_html(self, content: str, article_url: str, filename: Optional[str] = None) -> str:
+    async def save_html(self, content: str, filename: Optional[str] = None, metadata: Dict[str, Any] = {}) -> str:
         """
         Save HTML content and return the storage path.
         
         Args:
             content: HTML content to save
-            article_url: Original article URL for reference
+            filename: Optional filename (will be sanitized)
+            metadata: Additional metadata
             
         Returns:
             Storage path/key for the saved HTML file
@@ -201,22 +212,28 @@ class ObjectStore:
         if not content:
             return ""
         
-        filename = f"{filename}.html" if filename else self._generate_filename(content, "html")
+        if filename:
+            sanitized_filename = self.sanitize_filename(filename)
+            filename = f"{sanitized_filename}.html"
+        else:
+            filename = self.generate_unique_filename(content, "html")
+        
         path = f"html/{filename}"
         
         return await self.backend.save_content(
             content, 
             path, 
-            {"article_url": article_url}
+            metadata
         )
     
-    async def save_markdown(self, content: str, article_url: str, filename: Optional[str] = None) -> str:
+    async def save_markdown(self, content: str, filename: Optional[str] = None, metadata: Dict[str, Any] = {}) -> str:
         """
         Save markdown content and return the storage path.
         
         Args:
             content: Markdown content to save
-            article_url: Original article URL for reference
+            filename: Optional filename (will be sanitized)
+            metadata: Additional metadata
             
         Returns:
             Storage path/key for the saved markdown file
@@ -224,15 +241,37 @@ class ObjectStore:
         if not content:
             return ""
         
-        filename = f"{filename}.md" if filename else self._generate_filename(content, "md")
+        if filename:
+            sanitized_filename = self.sanitize_filename(filename)
+            filename = f"{sanitized_filename}.md"
+        else:
+            filename = self.generate_unique_filename(content, "md")
+        
         path = f"markdown/{filename}"
         
         return await self.backend.save_content(
             content, 
             path, 
-            {"article_url": article_url}
+            metadata
         )
 
+    async def save_json(self, content: Dict[str, Any], filename: Optional[str] = None, metadata: Dict[str, Any] = {}) -> str:
+        if not content:
+            return ""
+        
+        if filename:
+            sanitized_filename = self.sanitize_filename(filename)
+            filename = f"{sanitized_filename}.json"
+        else:
+            filename = self.generate_unique_filename(json.dumps(content), "json")
+        
+        path = f"json/{filename}"
+        
+        return await self.backend.save_content(
+            json.dumps(content),
+            path,
+            metadata
+        )
 
 # Global instance
 object_store = ObjectStore()

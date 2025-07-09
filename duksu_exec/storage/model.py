@@ -57,7 +57,6 @@ class NewsFeedItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     news_feed_id = Column(Integer, ForeignKey("news_feeds.id"), nullable=False, index=True)
     news_article_id = Column(Integer, ForeignKey("news_articles.id"), nullable=False, index=True)
-    curation_scores = Column(Text, nullable=True)  # JSON string of curation scores
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

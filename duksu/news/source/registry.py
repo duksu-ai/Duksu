@@ -267,7 +267,7 @@ class NewsSourceRegistry:
         """)
         prompt.add_task_prompt(f"User Query: {query_prompt}")
         response = cast(NewsSearchPlanList, await structured_llm.ainvoke(prompt.get_prompt()))
-        
+
         if len(response.search_plans) > CONFIG.ARTICLE_REGISTRY_MAX_NEWS_SOURCES:
             cls.logger.warning(f"Number of news search plans ({len(response.search_plans)}) exceeds configured max number of news sources ({CONFIG.ARTICLE_REGISTRY_MAX_NEWS_SOURCES})")
 
