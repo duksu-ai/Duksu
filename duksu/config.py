@@ -51,11 +51,11 @@ class Config:
 
     @property
     def ARTICLE_KEYWORDS_MIN_COUNT(self) -> int:
-        return int(os.getenv('ARTICLE_KEYWORDS_MIN_COUNT', '3'))
+        return int(os.getenv('ARTICLE_KEYWORDS_MIN_COUNT', '1'))
 
     @property
     def ARTICLE_KEYWORDS_MAX_COUNT(self) -> int:
-        return int(os.getenv('ARTICLE_KEYWORDS_MAX_COUNT', '5'))
+        return int(os.getenv('ARTICLE_KEYWORDS_MAX_COUNT', '3'))
 
     @property
     def ARTICLE_SUMMARY_MIN_WORD_COUNT(self) -> int:
@@ -63,7 +63,7 @@ class Config:
 
     @property
     def ARTICLE_SUMMARY_MAX_WORD_COUNT(self) -> int:
-        return int(os.getenv('ARTICLE_SUMMARY_MAX_WORD_COUNT', '200'))
+        return int(os.getenv('ARTICLE_SUMMARY_MAX_WORD_COUNT', '150'))
 
 
 CONFIG = Config()

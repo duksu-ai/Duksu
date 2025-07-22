@@ -188,6 +188,14 @@ class ObjectStore:
         """Sanitize filename to be safe for file systems and S3 keys."""
         sanitized = sanitize_filename(filename, replacement_text="_")
         sanitized = sanitized.replace(' ', '_')
+        
+        sanitized = ''.join(char for char in sanitized if ord(char) < 128)
+        
+        # Remove characters that are problematic for S3 keys
+        problematic_chars = '%#?&=+@:,$[]{}|\\^~`<>"\''
+        for char in problematic_chars:
+            sanitized = sanitized.replace(char, '_')
+        
         if len(sanitized) > 200:
             sanitized = sanitized[:200]
         return sanitized.strip('_')
